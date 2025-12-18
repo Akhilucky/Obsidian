@@ -1,0 +1,31 @@
+# Infrastructure Requirements (for production deployment)
+# ========================================================
+# Install: pip install -r requirements-infra.txt
+
+# Include core
+-r requirements-core.txt
+
+# Caching
+redis>=4.5.0
+
+# Task Queue
+celery>=5.3.0
+
+# Message Queues (choose based on your setup)
+pika>=1.3.0          # RabbitMQ
+# kafka-python>=2.0.2  # Kafka
+
+# Web Framework
+fastapi>=0.100.0
+uvicorn>=0.23.0
+
+# Database
+sqlalchemy>=2.0.0
+duckdb>=0.9.0
+# psycopg2-binary>=2.9.0  # PostgreSQL
+
+# Monitoring
+prometheus-client>=0.17.0
+
+# Containers
+# docker>=6.1.0

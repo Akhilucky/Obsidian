@@ -1,0 +1,23 @@
+# Machine Learning Requirements
+# ==============================
+# Install: pip install -r requirements-ml.txt
+
+# Include core
+-r requirements-core.txt
+
+# ML Libraries
+scikit-learn>=1.3.0
+xgboost>=1.7.0
+lightgbm>=4.0.0
+
+# Deep Learning (PyTorch - choose one based on your system)
+torch>=2.0.0
+# tensorflow>=2.13.0  # Alternative: uncomment if preferred
+
+# NLP / Sentiment
+textblob>=0.17.1
+vaderSentiment>=3.3.2
+transformers>=4.30.0
+
+# Optimization
+optuna>=3.0.0

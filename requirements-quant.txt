@@ -1,0 +1,21 @@
+# Quantitative Finance Requirements
+# ==================================
+# Install: pip install -r requirements-quant.txt
+
+# Include core
+-r requirements-core.txt
+
+# Quant Libraries
+quantstats>=0.0.62
+empyrical>=0.5.5
+arch>=6.1.0
+
+# Portfolio Optimization (may need CVXOPT system install)
+# cvxpy>=1.4.0
+# riskfolio-lib>=4.0.0
+
+# Performance
+numba>=0.58.0
+
+# Statistics
+statsmodels>=0.14.0
