@@ -1,4 +1,4 @@
-# 🏦 JR Bloomberg Terminal - Institutional-Grade Trading Platform
+# 🏦 Obsidian Terminal - Institutional-Grade Trading Platform
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![OpenBB](https://img.shields.io/badge/OpenBB-4.0+-green.svg)](https://openbb.co/)
