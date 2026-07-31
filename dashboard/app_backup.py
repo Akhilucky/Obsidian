@@ -593,7 +593,7 @@ with st.sidebar:
     
     page = st.radio(
         "Navigation",
-        ["📊 Dashboard", "📈 Analysis", "🎯 Alpha Signals", "💼 Portfolio", "🔬 Research", "⚙️ Settings"],
+        ["📊 Dashboard", "📈 Analysis", "🎯 Alpha Signals", "💼 Portfolio", "🔬 Research", "🤖 Agents", "⚙️ Settings"],
         label_visibility="collapsed"
     )
     
@@ -1124,6 +1124,180 @@ elif page == "🔬 Research":
         )
     else:
         st.info("Run `python download_data.py` to download fundamental data")
+
+elif page == "🤖 Agents":
+    # ============================================================================
+    # AGENT COMMAND CENTER
+    # ============================================================================
+    st.markdown("""
+    <div class="terminal-header">
+        <div class="terminal-logo">AGENT COMMAND CENTER</div>
+        <div class="terminal-status">Multi-Agent Pipeline</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Import agent system
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).parent.parent))
+        from agents.agent_registry import create_default_registry
+        from agents.orchestrator import AgentOrchestrator
+        from core.event_bus import EventBus
+        AGENTS_AVAILABLE = True
+    except Exception as _e:
+        AGENTS_AVAILABLE = False
+        st.error(f"Agent system not available: {_e}")
+    
+    if AGENTS_AVAILABLE:
+        # Initialize agents (cached)
+        @st.cache_resource
+        def get_orchestrator():
+            orch = AgentOrchestrator()
+            orch.start()
+            return orch
+        
+        orch = get_orchestrator()
+        registry = orch._registry
+        bus = EventBus()
+        
+        # Pipeline Diagram
+        st.markdown("### Pipeline Status")
+        
+        pipeline_stages = [
+            ("Data Ingestion", "DataIngestionAgent", "📡"),
+            ("Data Quality", "DataQualityAgent", "🧪"),
+            ("Feature Engineering", "FeatureEngineeringAgent", "📐"),
+            ("Regime Detection", "RegimeDetectionAgent", "🌦️"),
+            ("Modeling", "ModelingAgent", "🤖"),
+            ("Decision", "DecisionAgent", "🧠"),
+            ("Risk Evaluation", "RiskAgent", "⚖️"),
+            ("Scenario Sim", "ScenarioAgent", "🔬"),
+            ("Monitoring", "MonitoringAgent", "📊"),
+            ("Lifecycle", "LifecycleAgent", "🗂️"),
+        ]
+        
+        # Display pipeline as cards
+        cols = st.columns(5)
+        for i, (label, agent_name, icon) in enumerate(pipeline_stages):
+            agent = registry.get(agent_name)
+            if agent:
+                health = agent.health_check()
+                status = health.get("status", "unknown")
+                color = "#00ff88" if status == "healthy" else ("#ffcc00" if status == "degraded" else "#ff3366")
+            else:
+                status = "missing"
+                color = "#ff3366"
+            
+            with cols[i % 5]:
+                st.markdown(f"""
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid {color}; 
+                            border-radius: 8px; padding: 0.75rem; text-align: center; margin-bottom: 0.5rem;">
+                    <div style="font-size: 1.5rem;">{icon}</div>
+                    <div style="font-size: 0.75rem; font-weight: 600; color: white;">{label}</div>
+                    <div style="font-size: 0.65rem; color: {color}; margin-top: 0.25rem;">● {status.upper()}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        
+        # System Health Summary
+        health_data = registry.health_check_all()
+        sys_status = health_data.get("system_status", "unknown")
+        sys_color = "#00ff88" if sys_status == "healthy" else "#ffcc00"
+        
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("System Status", sys_status.upper())
+        col2.metric("Agents", health_data.get("agent_count", 0))
+        col3.metric("Events Published", bus.stats.get("total_published", 0))
+        col4.metric("Events Consumed", bus.stats.get("total_consumed", 0))
+        
+        st.markdown("---")
+        
+        # Run Pipeline Section
+        st.markdown("### Run Pipeline")
+        
+        run_col1, run_col2, run_col3 = st.columns(3)
+        with run_col1:
+            agent_symbols = st.text_input("Symbols (comma-separated)", value="AAPL, MSFT, GOOGL", key="agent_symbols")
+        with run_col2:
+            agent_source = st.selectbox("Data Source", ["yahoo", "openbb"], key="agent_source")
+        with run_col3:
+            agent_period = st.selectbox("Period", ["6mo", "1y", "2y"], index=1, key="agent_period")
+        
+        if st.button("▶️ Run Full Pipeline", type="primary"):
+            symbols = [s.strip() for s in agent_symbols.split(",") if s.strip()]
+            with st.spinner(f"Running pipeline for {symbols}..."):
+                results = orch.run_pipeline(symbols, source=agent_source, period=agent_period)
+                
+                for sym, result in results.items():
+                    d = result.to_dict()
+                    status_icon = "✅" if d["success"] else "⚠️"
+                    
+                    with st.expander(f"{status_icon} {sym} — {d['duration_ms']:.0f}ms", expanded=True):
+                        # Stage progress
+                        completed = d["stages_completed"]
+                        for stage_label, _, stage_icon in pipeline_stages:
+                            stage_key = stage_label.replace(" ", "")
+                            in_completed = any(stage_key.lower().replace(" ", "") in s.lower().replace(" ", "") for s in completed)
+                            check = "✅" if in_completed else "⬜"
+                            st.text(f"  {check} {stage_icon} {stage_label}")
+                        
+                        # Key results
+                        data = d.get("data", {})
+                        if data.get("signal"):
+                            rcol1, rcol2, rcol3, rcol4 = st.columns(4)
+                            rcol1.metric("Signal", data.get("signal", "—"))
+                            rcol2.metric("Confidence", f"{data.get('confidence', 0):.1%}")
+                            rcol3.metric("Regime", data.get("regime", "—"))
+                            rcol4.metric("Conviction", f"{data.get('conviction', 0):.1%}")
+                        
+                        if data.get("resilience_score") is not None:
+                            st.metric("Resilience Score", f"{data['resilience_score']:.1%}")
+        
+        st.markdown("---")
+        
+        # Agent Details
+        st.markdown("### Agent Details")
+        
+        selected_agent = st.selectbox(
+            "Select Agent",
+            [name for name in registry.agent_names],
+            key="agent_detail_select"
+        )
+        
+        if selected_agent:
+            agent = registry.get(selected_agent)
+            if agent:
+                detail_col1, detail_col2 = st.columns(2)
+                
+                with detail_col1:
+                    st.markdown("#### Health")
+                    st.json(agent.health)
+                
+                with detail_col2:
+                    st.markdown("#### Metrics")
+                    st.json(agent.metrics)
+                
+                # Recent logs
+                st.markdown("#### Recent Logs")
+                logs = agent.logs[-20:]
+                if logs:
+                    for log_entry in reversed(logs):
+                        if "[ERROR]" in log_entry:
+                            st.markdown(f"🔴 `{log_entry}`")
+                        elif "[WARNING]" in log_entry:
+                            st.markdown(f"🟡 `{log_entry}`")
+                        else:
+                            st.markdown(f"🟢 `{log_entry}`")
+                else:
+                    st.info("No logs yet — run the pipeline to generate activity.")
+        
+        st.markdown("---")
+        
+        # Event Bus Stats
+        st.markdown("### Event Bus")
+        bus_stats = bus.stats
+        st.json(bus_stats)
 
 elif page == "⚙️ Settings":
     st.markdown("""

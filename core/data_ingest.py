@@ -42,6 +42,8 @@ class DataSource(Enum):
     ALPHA_VANTAGE = "alpha_vantage"
     POLYGON = "polygon"
     TIINGO = "tiingo"
+    NSE = "nse"
+    BSE = "bse"
 
 
 class AssetClass(Enum):
@@ -361,6 +363,30 @@ class DataIngestPipeline:
         ],
         'crypto': ['BTC-USD', 'ETH-USD', 'SOL-USD', 'ADA-USD', 'DOT-USD'],
         'forex': ['EURUSD=X', 'GBPUSD=X', 'USDJPY=X', 'USDCHF=X', 'AUDUSD=X'],
+        'nifty50': [
+            'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'ICICIBANK.NS',
+            'HINDUNILVR.NS', 'SBIN.NS', 'BHARTIARTL.NS', 'ITC.NS', 'KOTAKBANK.NS',
+            'LT.NS', 'AXISBANK.NS', 'ASIANPAINT.NS', 'MARUTI.NS', 'HCLTECH.NS',
+            'SUNPHARMA.NS', 'TATAMOTORS.NS', 'WIPRO.NS', 'TITAN.NS', 'ULTRACEMCO.NS',
+            'NTPC.NS', 'ONGC.NS', 'POWERGRID.NS', 'M&M.NS', 'JSWSTEEL.NS',
+            'TATASTEEL.NS', 'ADANIENT.NS', 'BAJFINANCE.NS', 'BAJAJFINSV.NS',
+            'INDUSINDBK.NS', 'GRASIM.NS', 'HINDALCO.NS', 'DIVISLAB.NS',
+            'DRREDDY.NS', 'EICHERMOT.NS', 'CIPLA.NS', 'APOLLOHOSP.NS',
+            'TATACONSUM.NS', 'BPCL.NS', 'COALINDIA.NS',
+        ],
+        'sensex30': [
+            'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'ICICIBANK.NS',
+            'HINDUNILVR.NS', 'SBIN.NS', 'BHARTIARTL.NS', 'ITC.NS', 'KOTAKBANK.NS',
+            'LT.NS', 'AXISBANK.NS', 'ASIANPAINT.NS', 'MARUTI.NS', 'HCLTECH.NS',
+            'SUNPHARMA.NS', 'TATAMOTORS.NS', 'WIPRO.NS', 'TITAN.NS', 'ULTRACEMCO.NS',
+            'NTPC.NS', 'ONGC.NS', 'POWERGRID.NS', 'M&M.NS', 'JSWSTEEL.NS',
+            'TATASTEEL.NS', 'ADANIENT.NS', 'BAJFINANCE.NS', 'BAJAJFINSV.NS',
+            'INDUSINDBK.NS',
+        ],
+        'nifty_it': [
+            'TCS.NS', 'INFY.NS', 'WIPRO.NS', 'HCLTECH.NS', 'TECHM.NS',
+            'MPHASIS.NS', 'LTTS.NS', 'PERSISTENT.NS', 'COFORGE.NS', 'INFOBIP.NS',
+        ],
     }
     
     def __init__(self, data_dir: Path = None):
@@ -435,6 +461,26 @@ class DataIngestPipeline:
             logger.info(f"Saved crypto data to {path}")
         
         return df
+
+    def ingest_indian(self, universe: str = "nifty50", start: str = None, end: str = None,
+                      save: bool = True) -> Dict[str, pd.DataFrame]:
+        """Ingest Indian market (NSE/BSE) data via yfinance."""
+        logger.info(f"Ingesting Indian market universe: {universe}")
+        try:
+            from data.indian_markets import IndianMarketDataFetcher
+        except ImportError:
+            logger.error("data.indian_markets module not available")
+            return {}
+
+        fetcher = IndianMarketDataFetcher(data_dir=self.data_dir)
+        results = fetcher.fetch_universe(universe, start, end)
+
+        if save and results:
+            for sym, df in results.items():
+                self._save_data(df, "indian", sym)
+
+        logger.info(f"Indian ingest complete: {len(results)} symbols")
+        return results
     
     def ingest_all(self, save: bool = True) -> Dict[str, Any]:
         """Run full data ingestion pipeline."""
@@ -489,7 +535,7 @@ class DataIngestPipeline:
         """Get combined data for multiple symbols."""
         dfs = []
         for symbol in symbols:
-            for category in ['sp500_top50', 'indices', 'sectors', 'etfs', 'crypto', 'forex']:
+            for category in ['sp500_top50', 'indices', 'sectors', 'etfs', 'crypto', 'forex', 'indian', 'indian_indices']:
                 df = self.load_data(category, symbol)
                 if not df.empty:
                     dfs.append(df[[column]].rename(columns={column: symbol}))

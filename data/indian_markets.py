@@ -1,842 +1,338 @@
 """
-Indian Stock Market Integration Module
-Comprehensive NSE, BSE, and Indian financial market data
+Indian Stock Market Integration Module (yfinance)
+===================================================
+Fetches Indian stock data via Yahoo Finance.
+Indian stocks use .NS suffix for NSE and .BO for BSE on Yahoo Finance.
+
+Indices: ^NSEI (NIFTY 50), ^BSESN (SENSEX)
 """
 
 import logging
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from enum import Enum
-import json
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import pandas as pd
+import numpy as np
+
+try:
+    import yfinance as yf
+    YF_AVAILABLE = True
+except ImportError:
+    YF_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
+DATA_DIR = Path(__file__).parent.parent / "data_warehouse"
+DATA_DIR.mkdir(exist_ok=True)
 
-class Exchange(Enum):
-    """Indian stock exchanges"""
-    NSE = "NSE"
-    BSE = "BSE"
+# ---------------------------------------------------------------------------
+# Predefined Indian market universes
+# ---------------------------------------------------------------------------
 
+NIFTY_50 = [
+    "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS",
+    "HINDUNILVR.NS", "SBIN.NS", "BHARTIARTL.NS", "ITC.NS", "KOTAKBANK.NS",
+    "LT.NS", "AXISBANK.NS", "ASIANPAINT.NS", "MARUTI.NS", "HCLTECH.NS",
+    "SUNPHARMA.NS", "TATAMOTORS.NS", "WIPRO.NS", "TITAN.NS", "ULTRACEMCO.NS",
+    "NTPC.NS", "ONGC.NS", "POWERGRID.NS", "M&M.NS", "JSWSTEEL.NS",
+    "TATASTEEL.NS", "ADANIENT.NS", "BAJFINANCE.NS", "BAJAJFINSV.NS",
+    "INDUSINDBK.NS", "GRASIM.NS", "HINDALCO.NS", "DIVISLAB.NS",
+    "DRREDDY.NS", "EICHERMOT.NS", "CIPLA.NS", "APOLLOHOSP.NS",
+    "TATACONSUM.NS", "BPCL.NS", "COALINDIA.NS",
+]
 
-class IndexType(Enum):
-    """Major Indian indices"""
-    NIFTY_50 = "NIFTY 50"
-    NIFTY_BANK = "NIFTY BANK"
-    NIFTY_IT = "NIFTY IT"
-    NIFTY_PHARMA = "NIFTY PHARMA"
-    NIFTY_AUTO = "NIFTY AUTO"
-    NIFTY_FMCG = "NIFTY FMCG"
-    NIFTY_METAL = "NIFTY METAL"
-    NIFTY_REALTY = "NIFTY REALTY"
-    NIFTY_ENERGY = "NIFTY ENERGY"
-    NIFTY_INFRA = "NIFTY INFRA"
-    NIFTY_PSE = "NIFTY PSE"
-    NIFTY_MIDCAP_50 = "NIFTY MIDCAP 50"
-    NIFTY_SMALLCAP_50 = "NIFTY SMLCAP 50"
-    SENSEX = "SENSEX"
-    BSE_100 = "BSE 100"
-    BSE_200 = "BSE 200"
-    BSE_500 = "BSE 500"
-    BSE_MIDCAP = "BSE MIDCAP"
-    BSE_SMALLCAP = "BSE SMALLCAP"
+SENSEX_30 = [
+    "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "INFY.NS", "ICICIBANK.NS",
+    "HINDUNILVR.NS", "SBIN.NS", "BHARTIARTL.NS", "ITC.NS", "KOTAKBANK.NS",
+    "LT.NS", "AXISBANK.NS", "ASIANPAINT.NS", "MARUTI.NS", "HCLTECH.NS",
+    "SUNPHARMA.NS", "TATAMOTORS.NS", "WIPRO.NS", "TITAN.NS", "ULTRACEMCO.NS",
+    "NTPC.NS", "ONGC.NS", "POWERGRID.NS", "M&M.NS", "JSWSTEEL.NS",
+    "TATASTEEL.NS", "ADANIENT.NS", "BAJFINANCE.NS", "BAJAJFINSV.NS",
+    "INDUSINDBK.NS",
+]
 
+NIFTY_IT = [
+    "TCS.NS", "INFY.NS", "WIPRO.NS", "HCLTECH.NS", "TECHM.NS",
+    "MPHASIS.NS", "LTTS.NS", "PERSISTENT.NS", "COFORGE.NS", "INFOBIP.NS",
+]
 
-@dataclass
-class StockQuote:
-    """Real-time stock quote data"""
-    symbol: str
-    exchange: Exchange
-    company_name: str
-    last_price: float
-    change: float
-    percent_change: float
-    open_price: float
-    high_price: float
-    low_price: float
-    prev_close: float
-    volume: int
-    value: float
-    timestamp: datetime
-    week_52_high: Optional[float] = None
-    week_52_low: Optional[float] = None
-    upper_circuit: Optional[float] = None
-    lower_circuit: Optional[float] = None
-    delivery_qty: Optional[int] = None
-    delivery_percent: Optional[float] = None
+NIFTY_BANK = [
+    "HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "KOTAKBANK.NS", "AXISBANK.NS",
+    "INDUSINDBK.NS", "BANDHANBNK.NS", "FEDERALBNK.NS", "PNB.NS",
+    "IDFCFIRSTB.NS", "AUBANK.NS", "MUTHOOTFIN.NS",
+]
 
+INDIAN_ETF = [
+    "NIFTYBEES.NS", "JUNIORBEES.NS", "BANKBEES.NS", "GOLDBEES.NS",
+]
 
-@dataclass
-class IndexQuote:
-    """Index data"""
-    name: str
-    value: float
-    change: float
-    percent_change: float
-    open_value: float
-    high_value: float
-    low_value: float
-    prev_close: float
-    timestamp: datetime
+INDIAN_UNIVERSES = {
+    "nifty50": NIFTY_50,
+    "sensex30": SENSEX_30,
+    "nifty_it": NIFTY_IT,
+    "nifty_bank": NIFTY_BANK,
+    "indian_etf": INDIAN_ETF,
+}
 
 
-@dataclass
-class MarketBreadth:
-    """Market breadth data"""
-    advances: int
-    declines: int
-    unchanged: int
-    total: int
-    advance_ratio: float
-    timestamp: datetime
-
-
-@dataclass
-class FIIDIIData:
-    """FII/DII activity data"""
-    date: datetime
-    fii_buy: float
-    fii_sell: float
-    fii_net: float
-    dii_buy: float
-    dii_sell: float
-    dii_net: float
-
-
-@dataclass
-class DeliveryData:
-    """Delivery volume data"""
-    symbol: str
-    traded_qty: int
-    delivery_qty: int
-    delivery_percent: float
-    date: datetime
-
-
-class NSEDataFetcher:
+class IndianMarketDataFetcher:
     """
-    NSE (National Stock Exchange) data fetcher
-    Fetches real-time quotes, historical data, indices, and derivatives
-    """
-    
-    def __init__(self):
-        self.base_url = "https://www.nseindia.com"
-        self.nse = None
-        self._initialize()
-    
-    def _initialize(self):
-        """Initialize NSE connection"""
-        try:
-            from nsetools import Nse
-            self.nse = Nse()
-            logger.info("NSE connection initialized")
-        except ImportError:
-            logger.warning("nsetools not installed. Install with: pip install nsetools")
-        except Exception as e:
-            logger.error(f"Failed to initialize NSE: {e}")
-    
-    def get_quote(self, symbol: str) -> Optional[StockQuote]:
-        """Get real-time quote for NSE stock"""
-        if not self.nse:
-            return self._get_mock_quote(symbol)
-        
-        try:
-            quote = self.nse.get_quote(symbol.upper())
-            if quote:
-                return StockQuote(
-                    symbol=symbol.upper(),
-                    exchange=Exchange.NSE,
-                    company_name=quote.get('companyName', ''),
-                    last_price=float(quote.get('lastPrice', 0)),
-                    change=float(quote.get('change', 0)),
-                    percent_change=float(quote.get('pChange', 0)),
-                    open_price=float(quote.get('open', 0)),
-                    high_price=float(quote.get('dayHigh', 0)),
-                    low_price=float(quote.get('dayLow', 0)),
-                    prev_close=float(quote.get('previousClose', 0)),
-                    volume=int(quote.get('totalTradedVolume', 0)),
-                    value=float(quote.get('totalTradedValue', 0)),
-                    timestamp=datetime.now(),
-                    week_52_high=float(quote.get('high52', 0)) if quote.get('high52') else None,
-                    week_52_low=float(quote.get('low52', 0)) if quote.get('low52') else None,
-                    upper_circuit=float(quote.get('upperCP', 0)) if quote.get('upperCP') else None,
-                    lower_circuit=float(quote.get('lowerCP', 0)) if quote.get('lowerCP') else None,
-                    delivery_qty=int(quote.get('deliveryQuantity', 0)) if quote.get('deliveryQuantity') else None,
-                    delivery_percent=float(quote.get('deliveryToTradedQuantity', 0)) if quote.get('deliveryToTradedQuantity') else None
-                )
-        except Exception as e:
-            logger.error(f"Error fetching NSE quote for {symbol}: {e}")
-        
-        return None
-    
-    def _get_mock_quote(self, symbol: str) -> StockQuote:
-        """Get mock quote for testing"""
-        import random
-        base_price = random.uniform(100, 5000)
-        change = random.uniform(-50, 50)
-        return StockQuote(
-            symbol=symbol.upper(),
-            exchange=Exchange.NSE,
-            company_name=f"{symbol} Ltd.",
-            last_price=base_price,
-            change=change,
-            percent_change=(change / base_price) * 100,
-            open_price=base_price - random.uniform(-20, 20),
-            high_price=base_price + random.uniform(10, 50),
-            low_price=base_price - random.uniform(10, 50),
-            prev_close=base_price - change,
-            volume=random.randint(100000, 10000000),
-            value=random.uniform(1000000, 100000000),
-            timestamp=datetime.now()
-        )
-    
-    def get_all_stock_codes(self) -> List[str]:
-        """Get all NSE stock codes"""
-        if not self.nse:
-            return ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", 
-                    "WIPRO", "BHARTIARTL", "ITC", "SBIN", "AXISBANK"]
-        
-        try:
-            return list(self.nse.get_stock_codes().keys())
-        except Exception as e:
-            logger.error(f"Error fetching stock codes: {e}")
-            return []
-    
-    def get_index_quote(self, index: str = "NIFTY 50") -> Optional[IndexQuote]:
-        """Get index quote"""
-        if not self.nse:
-            return self._get_mock_index(index)
-        
-        try:
-            data = self.nse.get_index_quote(index)
-            if data:
-                return IndexQuote(
-                    name=index,
-                    value=float(data.get('lastPrice', 0)),
-                    change=float(data.get('change', 0)),
-                    percent_change=float(data.get('pChange', 0)),
-                    open_value=float(data.get('open', 0)),
-                    high_value=float(data.get('high', 0)),
-                    low_value=float(data.get('low', 0)),
-                    prev_close=float(data.get('previousClose', 0)),
-                    timestamp=datetime.now()
-                )
-        except Exception as e:
-            logger.error(f"Error fetching index {index}: {e}")
-        
-        return None
-    
-    def _get_mock_index(self, index: str) -> IndexQuote:
-        """Get mock index for testing"""
-        import random
-        base_value = 20000 if "NIFTY" in index else 65000
-        change = random.uniform(-200, 200)
-        return IndexQuote(
-            name=index,
-            value=base_value,
-            change=change,
-            percent_change=(change / base_value) * 100,
-            open_value=base_value - random.uniform(-100, 100),
-            high_value=base_value + random.uniform(50, 150),
-            low_value=base_value - random.uniform(50, 150),
-            prev_close=base_value - change,
-            timestamp=datetime.now()
-        )
-    
-    def get_top_gainers(self) -> List[Dict]:
-        """Get top gainers"""
-        if not self.nse:
-            return self._get_mock_movers("gainers")
-        
-        try:
-            return self.nse.get_top_gainers()
-        except Exception as e:
-            logger.error(f"Error fetching top gainers: {e}")
-            return []
-    
-    def get_top_losers(self) -> List[Dict]:
-        """Get top losers"""
-        if not self.nse:
-            return self._get_mock_movers("losers")
-        
-        try:
-            return self.nse.get_top_losers()
-        except Exception as e:
-            logger.error(f"Error fetching top losers: {e}")
-            return []
-    
-    def _get_mock_movers(self, mover_type: str) -> List[Dict]:
-        """Get mock movers for testing"""
-        import random
-        symbols = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK"]
-        movers = []
-        for symbol in symbols:
-            change = random.uniform(3, 10) if mover_type == "gainers" else random.uniform(-10, -3)
-            movers.append({
-                "symbol": symbol,
-                "ltp": random.uniform(500, 3000),
-                "netPrice": change,
-                "tradedQuantity": random.randint(100000, 5000000)
-            })
-        return movers
-    
-    def is_valid_code(self, symbol: str) -> bool:
-        """Check if stock code is valid"""
-        if not self.nse:
-            return True
-        
-        try:
-            return self.nse.is_valid_code(symbol.upper())
-        except:
-            return False
+    Fetch Indian stock data via yfinance.
 
+    Indian tickers on Yahoo Finance:
+    - NSE: SYMBOL.NS  (e.g. RELIANCE.NS)
+    - BSE: SYMBOL.BO  (e.g. RELIANCE.BO)
+    - Indices: ^NSEI (NIFTY 50), ^BSESN (SENSEX)
+    """
 
-class BSEDataFetcher:
-    """
-    BSE (Bombay Stock Exchange) data fetcher
-    """
-    
-    def __init__(self):
-        self.bse = None
-        self._initialize()
-    
-    def _initialize(self):
-        """Initialize BSE connection"""
-        try:
-            from bsedata.bse import BSE
-            self.bse = BSE()
-            logger.info("BSE connection initialized")
-        except ImportError:
-            logger.warning("bsedata not installed. Install with: pip install bsedata")
-        except Exception as e:
-            logger.error(f"Failed to initialize BSE: {e}")
-    
-    def get_quote(self, scrip_code: str) -> Optional[StockQuote]:
-        """Get real-time quote for BSE stock"""
-        if not self.bse:
-            return self._get_mock_quote(scrip_code)
-        
-        try:
-            quote = self.bse.getQuote(scrip_code)
-            if quote:
-                return StockQuote(
-                    symbol=scrip_code,
-                    exchange=Exchange.BSE,
-                    company_name=quote.get('companyName', ''),
-                    last_price=float(quote.get('currentValue', 0)),
-                    change=float(quote.get('change', 0)),
-                    percent_change=float(quote.get('pChange', 0)),
-                    open_price=float(quote.get('open', 0)),
-                    high_price=float(quote.get('high', 0)),
-                    low_price=float(quote.get('low', 0)),
-                    prev_close=float(quote.get('previousClose', 0)),
-                    volume=int(quote.get('totalTradedQuantity', 0)),
-                    value=float(quote.get('totalTradedValue', 0)),
-                    timestamp=datetime.now(),
-                    week_52_high=float(quote.get('52weekHigh', 0)) if quote.get('52weekHigh') else None,
-                    week_52_low=float(quote.get('52weekLow', 0)) if quote.get('52weekLow') else None,
-                    upper_circuit=float(quote.get('upperBand', 0)) if quote.get('upperBand') else None,
-                    lower_circuit=float(quote.get('lowerBand', 0)) if quote.get('lowerBand') else None
-                )
-        except Exception as e:
-            logger.error(f"Error fetching BSE quote for {scrip_code}: {e}")
-        
-        return None
-    
-    def _get_mock_quote(self, scrip_code: str) -> StockQuote:
-        """Get mock quote for testing"""
-        import random
-        base_price = random.uniform(100, 5000)
-        change = random.uniform(-50, 50)
-        return StockQuote(
-            symbol=scrip_code,
-            exchange=Exchange.BSE,
-            company_name=f"Company {scrip_code}",
-            last_price=base_price,
-            change=change,
-            percent_change=(change / base_price) * 100,
-            open_price=base_price - random.uniform(-20, 20),
-            high_price=base_price + random.uniform(10, 50),
-            low_price=base_price - random.uniform(10, 50),
-            prev_close=base_price - change,
-            volume=random.randint(100000, 10000000),
-            value=random.uniform(1000000, 100000000),
-            timestamp=datetime.now()
-        )
-    
-    def get_gainers(self) -> List[Dict]:
-        """Get top gainers"""
-        if not self.bse:
-            return []
-        
-        try:
-            return self.bse.topGainers()
-        except Exception as e:
-            logger.error(f"Error fetching BSE gainers: {e}")
-            return []
-    
-    def get_losers(self) -> List[Dict]:
-        """Get top losers"""
-        if not self.bse:
-            return []
-        
-        try:
-            return self.bse.topLosers()
-        except Exception as e:
-            logger.error(f"Error fetching BSE losers: {e}")
-            return []
+    INDICES = {
+        "NIFTY50": "^NSEI",
+        "SENSEX": "^BSESN",
+        "NIFTY_BANK": "^NSEBANK",
+        "NIFTY_IT": "^CNXIT",
+    }
 
+    def __init__(self, data_dir: Optional[Path] = None):
+        self.data_dir = data_dir or DATA_DIR
+        self.data_dir.mkdir(exist_ok=True)
+        if not YF_AVAILABLE:
+            logger.warning("yfinance not installed — IndianMarketDataFetcher will not work")
 
-class HistoricalDataFetcher:
-    """
-    Fetch historical data from NSE
-    """
-    
-    def __init__(self):
-        self.nsepy_available = False
-        self._check_availability()
-    
-    def _check_availability(self):
-        """Check if nsepy is available"""
-        try:
-            import nsepy
-            self.nsepy_available = True
-            logger.info("nsepy available for historical data")
-        except ImportError:
-            logger.warning("nsepy not installed. Install with: pip install nsepy")
-    
-    def get_historical_data(
+    # ------------------------------------------------------------------
+    # OHLCV helpers
+    # ------------------------------------------------------------------
+
+    def fetch_ohlcv(
         self,
         symbol: str,
-        start_date: datetime,
-        end_date: datetime,
-        index: bool = False
-    ) -> Optional[Any]:
-        """Get historical data for a stock or index"""
-        if not self.nsepy_available:
-            return self._get_mock_historical(symbol, start_date, end_date)
-        
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        interval: str = "1d",
+    ) -> pd.DataFrame:
+        """Fetch OHLCV data for a single Indian stock symbol."""
+        if not YF_AVAILABLE:
+            logger.error("yfinance not installed")
+            return pd.DataFrame()
+
         try:
-            from nsepy import get_history
-            data = get_history(
-                symbol=symbol,
-                start=start_date,
-                end=end_date,
-                index=index
-            )
-            return data
+            ticker = yf.Ticker(symbol)
+            df = ticker.history(start=start, end=end, interval=interval)
+            if not df.empty:
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = df.columns.get_level_values(0)
+                df.index.name = "date"
+                df["symbol"] = symbol
+                df["ingested_at"] = datetime.now(timezone.utc)
+            return df
         except Exception as e:
-            logger.error(f"Error fetching historical data for {symbol}: {e}")
-            return None
-    
-    def _get_mock_historical(self, symbol: str, start_date: datetime, end_date: datetime) -> Any:
-        """Generate mock historical data"""
-        try:
-            import pandas as pd
-            import numpy as np
-            
-            dates = pd.date_range(start=start_date, end=end_date, freq='B')
-            base_price = 1000
-            returns = np.random.normal(0.001, 0.02, len(dates))
-            prices = base_price * np.cumprod(1 + returns)
-            
-            data = pd.DataFrame({
-                'Open': prices * (1 + np.random.uniform(-0.01, 0.01, len(dates))),
-                'High': prices * (1 + np.random.uniform(0, 0.02, len(dates))),
-                'Low': prices * (1 - np.random.uniform(0, 0.02, len(dates))),
-                'Close': prices,
-                'Volume': np.random.randint(100000, 10000000, len(dates))
-            }, index=dates)
-            
-            return data
-        except ImportError:
-            return None
-    
-    def get_index_historical(
+            logger.error(f"Error fetching {symbol}: {e}")
+            return pd.DataFrame()
+
+    def fetch_universe(
         self,
-        index: str,
-        start_date: datetime,
-        end_date: datetime
-    ) -> Optional[Any]:
-        """Get historical data for an index"""
-        return self.get_historical_data(index, start_date, end_date, index=True)
+        universe: str = "nifty50",
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        interval: str = "1d",
+    ) -> Dict[str, pd.DataFrame]:
+        """Fetch OHLCV for every symbol in a predefined Indian universe."""
+        symbols = INDIAN_UNIVERSES.get(universe, [])
+        if not symbols:
+            logger.warning(f"Unknown Indian universe: {universe}")
+            return {}
 
+        results: Dict[str, pd.DataFrame] = {}
+        total = len(symbols)
+        for i, sym in enumerate(symbols):
+            df = self.fetch_ohlcv(sym, start, end, interval)
+            if not df.empty:
+                results[sym] = df
+                self._save(df, "indian", sym)
+            if (i + 1) % 10 == 0:
+                logger.info(f"Indian ingest progress: {i + 1}/{total}")
 
-class FIIDIITracker:
-    """
-    Track FII/DII activity in Indian markets
-    """
-    
-    def __init__(self):
-        self.data_cache: Dict[str, FIIDIIData] = {}
-    
-    def get_fii_dii_activity(self, date: Optional[datetime] = None) -> Optional[FIIDIIData]:
-        """Get FII/DII activity for a specific date"""
-        target_date = date or datetime.now()
-        
-        # Try to fetch from NSDL/CDSL or use cached data
-        cached_key = target_date.strftime("%Y-%m-%d")
-        if cached_key in self.data_cache:
-            return self.data_cache[cached_key]
-        
-        # Return mock data for demonstration
-        return self._get_mock_fii_dii(target_date)
-    
-    def _get_mock_fii_dii(self, date: datetime) -> FIIDIIData:
-        """Generate mock FII/DII data"""
-        import random
-        
-        fii_buy = random.uniform(5000, 15000)
-        fii_sell = random.uniform(4000, 14000)
-        dii_buy = random.uniform(3000, 10000)
-        dii_sell = random.uniform(2500, 9500)
-        
-        return FIIDIIData(
-            date=date,
-            fii_buy=fii_buy,
-            fii_sell=fii_sell,
-            fii_net=fii_buy - fii_sell,
-            dii_buy=dii_buy,
-            dii_sell=dii_sell,
-            dii_net=dii_buy - dii_sell
-        )
-    
-    def get_fii_dii_trend(self, days: int = 30) -> List[FIIDIIData]:
-        """Get FII/DII activity trend"""
-        trend = []
-        end_date = datetime.now()
-        
-        for i in range(days):
-            date = end_date - timedelta(days=i)
-            if date.weekday() < 5:  # Skip weekends
-                trend.append(self.get_fii_dii_activity(date))
-        
-        return trend
+        logger.info(f"Ingested {len(results)}/{total} symbols from '{universe}'")
+        return results
 
+    # ------------------------------------------------------------------
+    # Index data
+    # ------------------------------------------------------------------
 
-class SectorAnalyzer:
-    """
-    Analyze Indian market sectors
-    """
-    
-    SECTORS = {
-        "IT": ["TCS", "INFY", "WIPRO", "HCLTECH", "TECHM", "LTI", "MPHASIS", "COFORGE"],
-        "Banking": ["HDFCBANK", "ICICIBANK", "SBIN", "KOTAKBANK", "AXISBANK", "INDUSINDBK", "BANDHANBNK"],
-        "Pharma": ["SUNPHARMA", "DRREDDY", "CIPLA", "DIVISLAB", "APOLLOHOSP", "BIOCON", "AUROPHARMA"],
-        "Auto": ["MARUTI", "TATAMOTORS", "M&M", "BAJAJ-AUTO", "HEROMOTOCO", "EICHERMOT", "ASHOKLEY"],
-        "FMCG": ["HINDUNILVR", "ITC", "NESTLEIND", "BRITANNIA", "DABUR", "MARICO", "GODREJCP"],
-        "Energy": ["RELIANCE", "ONGC", "NTPC", "POWERGRID", "BPCL", "IOC", "GAIL"],
-        "Metal": ["TATASTEEL", "HINDALCO", "JSWSTEEL", "VEDL", "COALINDIA", "NMDC", "JINDALSTEL"],
-        "Realty": ["DLF", "GODREJPROP", "OBEROIRLTY", "PRESTIGE", "BRIGADE", "SOBHA"],
-        "Infra": ["LARSEN", "ADANIENT", "ADANIPORTS", "ULTRACEMCO", "GRASIM", "ACC", "AMBUJACEM"],
-        "Telecom": ["BHARTIARTL", "IDEA"],
-        "Consumer Durables": ["TITAN", "HAVELLS", "VOLTAS", "BLUESTARCO", "CROMPTON"]
-    }
-    
-    def __init__(self):
-        self.nse = NSEDataFetcher()
-    
-    def get_sector_performance(self, sector: str) -> Dict[str, Any]:
-        """Get performance of a sector"""
-        stocks = self.SECTORS.get(sector, [])
-        if not stocks:
-            return {"error": f"Unknown sector: {sector}"}
-        
-        performances = []
-        for symbol in stocks:
-            quote = self.nse.get_quote(symbol)
-            if quote:
-                performances.append({
-                    "symbol": symbol,
-                    "price": quote.last_price,
-                    "change": quote.change,
-                    "percent_change": quote.percent_change
-                })
-        
-        if performances:
-            avg_change = sum(p["percent_change"] for p in performances) / len(performances)
-            return {
-                "sector": sector,
-                "stocks": performances,
-                "average_change": avg_change,
-                "best_performer": max(performances, key=lambda x: x["percent_change"]),
-                "worst_performer": min(performances, key=lambda x: x["percent_change"])
-            }
-        
-        return {"sector": sector, "error": "No data available"}
-    
-    def get_all_sectors_summary(self) -> List[Dict[str, Any]]:
-        """Get summary of all sectors"""
-        summaries = []
-        for sector in self.SECTORS:
-            perf = self.get_sector_performance(sector)
-            if "average_change" in perf:
-                summaries.append({
-                    "sector": sector,
-                    "average_change": perf["average_change"],
-                    "num_stocks": len(self.SECTORS[sector])
-                })
-        
-        return sorted(summaries, key=lambda x: x.get("average_change", 0), reverse=True)
+    def fetch_index(
+        self,
+        name: str = "NIFTY50",
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+    ) -> pd.DataFrame:
+        """Fetch historical data for a major Indian index."""
+        symbol = self.INDICES.get(name)
+        if symbol is None:
+            logger.warning(f"Unknown index: {name}")
+            return pd.DataFrame()
 
+        df = self.fetch_ohlcv(symbol, start, end)
+        if not df.empty:
+            self._save(df, "indian_indices", symbol)
+        return df
 
-class IPOTracker:
-    """
-    Track upcoming and recent IPOs
-    """
-    
-    def __init__(self):
-        self.ipo_data: List[Dict] = []
-    
-    def get_upcoming_ipos(self) -> List[Dict]:
-        """Get list of upcoming IPOs"""
-        # This would typically fetch from NSE/BSE API or scrape IPO data
-        return [
-            {
-                "name": "Sample IPO Ltd",
-                "price_band": "₹500 - ₹525",
-                "issue_size": "₹1,000 Cr",
-                "open_date": (datetime.now() + timedelta(days=5)).strftime("%Y-%m-%d"),
-                "close_date": (datetime.now() + timedelta(days=8)).strftime("%Y-%m-%d"),
-                "lot_size": 28,
-                "listing_date": (datetime.now() + timedelta(days=15)).strftime("%Y-%m-%d")
-            }
-        ]
-    
-    def get_recent_listings(self) -> List[Dict]:
-        """Get recently listed IPOs"""
-        return [
-            {
-                "name": "Recent IPO Ltd",
-                "issue_price": 350,
-                "listing_price": 525,
-                "current_price": 480,
-                "listing_gain": 50.0,
-                "current_gain": 37.14,
-                "listing_date": (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-            }
-        ]
-    
-    def get_ipo_subscription_status(self, ipo_name: str) -> Dict:
-        """Get IPO subscription status"""
-        return {
-            "ipo_name": ipo_name,
-            "retail": {"subscribed": 5.2, "times": "5.2x"},
-            "nii": {"subscribed": 8.5, "times": "8.5x"},
-            "qib": {"subscribed": 15.3, "times": "15.3x"},
-            "total": {"subscribed": 10.1, "times": "10.1x"}
-        }
+    def fetch_all_indices(
+        self,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+    ) -> Dict[str, pd.DataFrame]:
+        """Fetch all major Indian indices."""
+        results: Dict[str, pd.DataFrame] = {}
+        for name in self.INDICES:
+            df = self.fetch_index(name, start, end)
+            if not df.empty:
+                results[name] = df
+        return results
 
+    # ------------------------------------------------------------------
+    # Options chain
+    # ------------------------------------------------------------------
 
-class DerivativesData:
-    """
-    Fetch derivatives (F&O) data from NSE
-    """
-    
-    def __init__(self):
-        self.nse = NSEDataFetcher()
-    
-    def get_option_chain(self, symbol: str, expiry_date: Optional[str] = None) -> Dict:
-        """Get option chain for a symbol"""
-        # In production, fetch from NSE API
-        return self._get_mock_option_chain(symbol)
-    
-    def _get_mock_option_chain(self, symbol: str) -> Dict:
-        """Generate mock option chain"""
-        import random
-        
-        spot_price = random.uniform(15000, 25000) if symbol == "NIFTY" else random.uniform(500, 3000)
-        strikes = []
-        
-        for i in range(-5, 6):
-            strike = round(spot_price + (i * 100 if symbol == "NIFTY" else i * 50), 0)
-            strikes.append({
-                "strike_price": strike,
-                "call_oi": random.randint(10000, 500000),
-                "call_change_oi": random.randint(-50000, 50000),
-                "call_ltp": max(0, spot_price - strike + random.uniform(10, 100)),
-                "call_iv": random.uniform(10, 30),
-                "put_oi": random.randint(10000, 500000),
-                "put_change_oi": random.randint(-50000, 50000),
-                "put_ltp": max(0, strike - spot_price + random.uniform(10, 100)),
-                "put_iv": random.uniform(10, 30)
-            })
-        
-        return {
-            "symbol": symbol,
-            "spot_price": spot_price,
-            "strikes": strikes,
-            "max_pain": spot_price,
-            "pcr": random.uniform(0.8, 1.5)
-        }
-    
-    def get_futures_data(self, symbol: str) -> Dict:
-        """Get futures data for a symbol"""
-        import random
-        
-        spot_price = random.uniform(500, 3000)
-        return {
-            "symbol": symbol,
-            "spot_price": spot_price,
-            "futures": [
-                {
-                    "expiry": "Current Month",
-                    "price": spot_price * 1.001,
-                    "oi": random.randint(100000, 5000000),
-                    "change_oi": random.randint(-100000, 100000),
-                    "volume": random.randint(50000, 2000000),
-                    "basis": random.uniform(-10, 20)
-                },
-                {
-                    "expiry": "Next Month",
-                    "price": spot_price * 1.003,
-                    "oi": random.randint(50000, 2000000),
-                    "change_oi": random.randint(-50000, 50000),
-                    "volume": random.randint(20000, 1000000),
-                    "basis": random.uniform(0, 30)
+    def fetch_options_chain(self, symbol: str) -> Dict[str, Any]:
+        """
+        Fetch options chain data for an Indian stock.
+
+        Parameters
+        ----------
+        symbol : str
+            Yahoo Finance symbol (e.g. "RELIANCE.NS").
+
+        Returns
+        -------
+        dict  expiry -> {calls: DataFrame, puts: DataFrame}
+        """
+        if not YF_AVAILABLE:
+            logger.error("yfinance not installed")
+            return {}
+
+        try:
+            ticker = yf.Ticker(symbol)
+            dates = ticker.options
+            chains: Dict[str, Any] = {}
+            for expiry in dates[:3]:
+                opt = ticker.option_chain(expiry)
+                chains[expiry] = {
+                    "calls": opt.calls,
+                    "puts": opt.puts,
                 }
-            ]
-        }
+            return chains
+        except Exception as e:
+            logger.error(f"Error fetching options for {symbol}: {e}")
+            return {}
+
+    # ------------------------------------------------------------------
+    # Ticker info
+    # ------------------------------------------------------------------
+
+    def fetch_info(self, symbol: str) -> Dict[str, Any]:
+        """Fetch ticker info for an Indian stock."""
+        if not YF_AVAILABLE:
+            return {}
+
+        try:
+            ticker = yf.Ticker(symbol)
+            return ticker.info
+        except Exception as e:
+            logger.error(f"Error fetching info for {symbol}: {e}")
+            return {}
+
+    # ------------------------------------------------------------------
+    # Batch convenience
+    # ------------------------------------------------------------------
+
+    def fetch_all_universes(
+        self,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+    ) -> Dict[str, Dict[str, pd.DataFrame]]:
+        """Fetch data for every predefined Indian universe."""
+        results: Dict[str, Dict[str, pd.DataFrame]] = {}
+        for universe in INDIAN_UNIVERSES:
+            results[universe] = self.fetch_universe(universe, start, end)
+        return results
+
+    # ------------------------------------------------------------------
+    # Persistence
+    # ------------------------------------------------------------------
+
+    def _save(self, df: pd.DataFrame, category: str, symbol: str):
+        """Persist a DataFrame to parquet."""
+        safe_name = symbol.replace("^", "IDX_")
+        path = self.data_dir / category / f"{safe_name}.parquet"
+        path.parent.mkdir(exist_ok=True)
+        df.to_parquet(path)
+
+    def load(self, category: str, symbol: str) -> pd.DataFrame:
+        """Load a previously saved parquet file."""
+        safe_name = symbol.replace("^", "IDX_")
+        path = self.data_dir / category / f"{safe_name}.parquet"
+        if path.exists():
+            return pd.read_parquet(path)
+        return pd.DataFrame()
 
 
-class IndianMarketDashboard:
+# ---------------------------------------------------------------------------
+# Convenience function
+# ---------------------------------------------------------------------------
+
+def quick_ingest_indian(
+    symbols: Optional[List[str]] = None,
+    universe: Optional[str] = None,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+) -> Dict[str, pd.DataFrame]:
     """
-    Unified Indian market data dashboard
+    Quick data ingestion for Indian market symbols.
+
+    Parameters
+    ----------
+    symbols : list, optional
+        Explicit list of Yahoo Finance symbols (e.g. ["RELIANCE.NS", "TCS.NS"]).
+    universe : str, optional
+        Predefined universe name from INDIAN_UNIVERSES.
+        Ignored when *symbols* is provided.
+    start / end : str, optional
+        Date range strings ("YYYY-MM-DD").
     """
-    
-    def __init__(self):
-        self.nse = NSEDataFetcher()
-        self.bse = BSEDataFetcher()
-        self.historical = HistoricalDataFetcher()
-        self.fii_dii = FIIDIITracker()
-        self.sector = SectorAnalyzer()
-        self.ipo = IPOTracker()
-        self.derivatives = DerivativesData()
-    
-    def get_market_overview(self) -> Dict[str, Any]:
-        """Get complete market overview"""
-        # Get major indices
-        indices = {}
-        for idx in [IndexType.NIFTY_50, IndexType.NIFTY_BANK, IndexType.SENSEX]:
-            quote = self.nse.get_index_quote(idx.value)
-            if quote:
-                indices[idx.value] = {
-                    "value": quote.value,
-                    "change": quote.change,
-                    "percent_change": quote.percent_change
-                }
-        
-        # Get FII/DII data
-        fii_dii = self.fii_dii.get_fii_dii_activity()
-        
-        # Get top movers
-        top_gainers = self.nse.get_top_gainers()[:5]
-        top_losers = self.nse.get_top_losers()[:5]
-        
-        # Get sector summary
-        sector_summary = self.sector.get_all_sectors_summary()[:5]
-        
-        return {
-            "timestamp": datetime.now().isoformat(),
-            "indices": indices,
-            "fii_dii": {
-                "fii_net": fii_dii.fii_net if fii_dii else 0,
-                "dii_net": fii_dii.dii_net if fii_dii else 0
-            },
-            "top_gainers": top_gainers,
-            "top_losers": top_losers,
-            "sector_performance": sector_summary
-        }
-    
-    def get_stock_analysis(self, symbol: str) -> Dict[str, Any]:
-        """Get comprehensive stock analysis"""
-        # Try NSE first
-        quote = self.nse.get_quote(symbol)
-        exchange = "NSE"
-        
-        if not quote:
-            # Try BSE
-            quote = self.bse.get_quote(symbol)
-            exchange = "BSE"
-        
-        if not quote:
-            return {"error": f"Stock {symbol} not found on NSE or BSE"}
-        
-        # Get historical data
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=365)
-        historical = self.historical.get_historical_data(symbol, start_date, end_date)
-        
-        # Get derivatives data if available
-        derivatives = None
-        if exchange == "NSE":
-            derivatives = self.derivatives.get_option_chain(symbol)
-        
-        return {
-            "symbol": symbol,
-            "exchange": exchange,
-            "quote": {
-                "price": quote.last_price,
-                "change": quote.change,
-                "percent_change": quote.percent_change,
-                "volume": quote.volume,
-                "52_week_high": quote.week_52_high,
-                "52_week_low": quote.week_52_low
-            },
-            "has_historical": historical is not None,
-            "has_derivatives": derivatives is not None,
-            "timestamp": datetime.now().isoformat()
-        }
-    
-    def compare_stocks(self, symbols: List[str]) -> Dict[str, Any]:
-        """Compare multiple stocks"""
-        comparisons = []
-        
-        for symbol in symbols:
-            quote = self.nse.get_quote(symbol)
-            if quote:
-                comparisons.append({
-                    "symbol": symbol,
-                    "price": quote.last_price,
-                    "change": quote.change,
-                    "percent_change": quote.percent_change,
-                    "volume": quote.volume
-                })
-        
-        if comparisons:
-            best = max(comparisons, key=lambda x: x["percent_change"])
-            worst = min(comparisons, key=lambda x: x["percent_change"])
-            
-            return {
-                "stocks": comparisons,
-                "best_performer": best["symbol"],
-                "worst_performer": worst["symbol"],
-                "timestamp": datetime.now().isoformat()
-            }
-        
-        return {"error": "No valid stocks found"}
+    fetcher = IndianMarketDataFetcher()
+
+    if symbols:
+        results: Dict[str, pd.DataFrame] = {}
+        for sym in symbols:
+            df = fetcher.fetch_ohlcv(sym, start, end)
+            if not df.empty:
+                results[sym] = df
+        return results
+
+    target = universe or "nifty50"
+    return fetcher.fetch_universe(target, start, end)
 
 
-# Example usage and testing
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
 if __name__ == "__main__":
-    # Initialize dashboard
-    dashboard = IndianMarketDashboard()
-    
-    # Get market overview
-    print("=== Indian Market Overview ===")
-    overview = dashboard.get_market_overview()
-    print(f"Indices: {overview['indices']}")
-    print(f"FII Net: ₹{overview['fii_dii']['fii_net']:.2f} Cr")
-    print(f"DII Net: ₹{overview['fii_dii']['dii_net']:.2f} Cr")
-    
-    # Analyze a stock
-    print("\n=== Stock Analysis: RELIANCE ===")
-    analysis = dashboard.get_stock_analysis("RELIANCE")
-    print(f"Price: ₹{analysis['quote']['price']:.2f}")
-    print(f"Change: {analysis['quote']['percent_change']:.2f}%")
-    
-    # Compare stocks
-    print("\n=== Stock Comparison ===")
-    comparison = dashboard.compare_stocks(["TCS", "INFY", "WIPRO"])
-    print(f"Best: {comparison['best_performer']}")
-    print(f"Worst: {comparison['worst_performer']}")
+    fetcher = IndianMarketDataFetcher()
+
+    print("=== Fetching NIFTY 50 (first 5) ===")
+    df = fetcher.fetch_ohlcv("RELIANCE.NS", start="2024-01-01")
+    if not df.empty:
+        print(df.tail(5))
+
+    print("\n=== Fetching NIFTY 50 index ===")
+    idx = fetcher.fetch_index("NIFTY50", start="2024-01-01")
+    if not idx.empty:
+        print(idx.tail(5))
+
+    print("\n=== Fetching options chain for RELIANCE.NS ===")
+    chains = fetcher.fetch_options_chain("RELIANCE.NS")
+    for expiry, data in list(chains.items())[:1]:
+        print(f"Expiry: {expiry}")
+        print(f"  Calls: {len(data['calls'])} rows")
+        print(f"  Puts:  {len(data['puts'])} rows")

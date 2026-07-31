@@ -1,375 +1,208 @@
-# 🏦 Obsidian Terminal - Institutional-Grade Trading Platform
+# 🏦 Obsidian Terminal
+
+> **An open-source, institutional-grade quantitative trading platform built in Python. Combines ML-powered predictions, multi-agent cooperative reasoning, real-time market data (US + India), advanced portfolio optimization, and a professional Bloomberg-style dashboard — all free.**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![OpenBB](https://img.shields.io/badge/OpenBB-4.0+-green.svg)](https://openbb.co/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-> **A comprehensive, institutional-grade financial terminal built in Python that rivals Bloomberg Terminal capabilities. Features ML-powered predictions, real-time sentiment analysis, advanced options pricing, crypto integration, and professional portfolio optimization.**
+---
+
+## What It Does
+
+Obsidian Terminal is a full-stack quantitative finance platform that ingests market data, engineers features, runs ML models, evaluates risk, and presents everything through a polished real-time dashboard. It supports **US markets** (NYSE, NASDAQ) and **Indian markets** (NSE, BSE) out of the box.
+
+### Core Capabilities
+
+| Area | What's Inside |
+|------|---------------|
+| **Data Ingestion** | Yahoo Finance, FRED macro, CoinGecko crypto, NSE/BSE India — 700+ feeds with parquet caching |
+| **10-Agent Pipeline** | Data → Quality → Features → Regime → Model → Decision → Risk → Scenario → Monitor → Lifecycle |
+| **ML Predictions** | Random Forest + Gradient Boosting ensemble, regime-conditioned, walk-forward validated |
+| **Feature Store** | 100+ technical indicators with versioning and point-in-time correctness |
+| **Portfolio Optimization** | Mean-Variance, Max Sharpe, Risk Parity, HRP, Black-Litterman, sector neutralization |
+| **Risk Management** | VaR, CVaR, stress testing, position limits, 2/20 fee model |
+| **Indian Markets** | NIFTY 50, SENSEX, NIFTY IT, NIFTY Bank — full NSE/BSE support with `.NS`/`.BO` suffixes |
+| **Crypto** | 100+ exchanges via CCXT, DeFi analytics, on-chain metrics |
+| **Dashboard** | Professional Streamlit UI with 8 tabs, interactive Plotly charts, "Midnight SaaS" design |
 
 ---
 
-## 🌟 Key Features
+## Dashboard Tabs
 
-### 🤖 Machine Learning Prediction Engine
-- **LSTM Neural Networks** - Deep learning models for time series forecasting
-- **XGBoost/LightGBM** - Gradient boosting for short-term predictions
-- **Ensemble Methods** - Combine multiple models for superior accuracy
-- **Walk-Forward Validation** - Proper out-of-sample testing methodology
-- **Automated Feature Engineering** - 50+ technical indicators auto-generated
-
-### 📊 Sentiment Analysis Engine
-- **News Sentiment** - Real-time analysis from NewsAPI, Alpha Vantage
-- **Social Media** - Twitter/X sentiment tracking
-- **NLP Pipeline** - VADER, TextBlob, and Transformers-based analysis
-- **Aggregated Scores** - Multi-source composite sentiment indicators
-- **Historical Tracking** - Time-series sentiment data for backtesting
-
-### 📈 Options Analytics Suite
-- **Black-Scholes Pricing** - European option valuation
-- **Greeks Calculator** - Delta, Gamma, Theta, Vega, Rho
-- **Volatility Surface** - 3D implied volatility visualization
-- **Monte Carlo Simulation** - American options and path-dependent derivatives
-- **Options Chain Analysis** - Real-time chain data with Greeks overlay
-
-### 🚨 Real-Time Alerting System
-- **Price Alerts** - Cross-above/below, percentage change triggers
-- **Technical Alerts** - RSI, MACD, Bollinger Band signals
-- **Volume Alerts** - Unusual volume detection
-- **Multi-Channel Notifications** - Email, SMS (Twilio), Discord webhooks
-- **Alert Dashboard** - Manage and monitor all active alerts
-
-### 💼 Advanced Portfolio Optimization
-- **Mean-Variance Optimization** - Markowitz efficient frontier
-- **Black-Litterman Model** - Incorporate market views
-- **CVaR Optimization** - Tail risk-focused portfolios
-- **Factor Models** - Fama-French factor exposure
-- **Robust Optimization** - Uncertainty-aware weight allocation
-
-### 🪙 Cryptocurrency Integration
-- **100+ Exchanges** - Via CCXT library
-- **DeFi Analytics** - TVL, yields, protocol metrics
-- **On-Chain Metrics** - Network activity, whale tracking
-- **Real-Time Prices** - WebSocket streaming
-- **Crypto-Equity Correlation** - Cross-asset analysis
-
-### 🔬 Event-Driven Backtesting
-- **Walk-Forward Optimization** - Prevent overfitting
-- **Multiple Strategy Types** - Momentum, mean-reversion, ML-based
-- **Transaction Costs** - Realistic slippage and commission modeling
-- **Performance Analytics** - 30+ metrics including Sharpe, Sortino, Calmar
-- **Monte Carlo Simulation** - Confidence intervals on returns
+| Tab | Features |
+|-----|----------|
+| **Overview** | Market indices, S&P 500 chart, sector heatmap, top alpha signals, live market breadth |
+| **Analysis** | Interactive candlestick charts with SMA, EMA, RSI, MACD, Bollinger Bands, ATR |
+| **Signals** | AI-powered factor decomposition, long/short idea ranking |
+| **Portfolio** | Holdings tracker with P&L, allocation pie chart, disk persistence |
+| **India** | NIFTY 50, SENSEX, NSE/BSE stock search, popular Indian stocks grid |
+| **Research** | Fundamental screening by sector, P/E, margins, ROE |
+| **Agents** | Full pipeline control, per-agent health inspector, event bus stats |
+| **Settings** | Cache management, system info |
 
 ---
 
-## 🏗️ Architecture
-
-```
-JR-Bloomberg-Terminal/
-├── 📂 analytics/           # Analysis engines
-│   ├── sentiment.py        # NLP sentiment analysis
-│   ├── options.py          # Black-Scholes & Greeks
-│   ├── alerts.py           # Real-time alerting
-│   └── technical.py        # Technical indicators
-├── 📂 data/                # Data acquisition
-│   ├── openbb_integration.py   # OpenBB primary source
-│   ├── crypto.py           # Cryptocurrency data
-│   └── fetchers.py         # Unified data interface
-├── 📂 portfolio/           # Portfolio management
-│   ├── advanced_optimization.py  # BL, CVaR, Factor models
-│   ├── optimizer.py        # Mean-variance optimization
-│   └── risk.py             # VaR, stress testing
-├── 📂 research/            # Quantitative research
-│   ├── ml_models.py        # LSTM, XGBoost, Ensemble
-│   ├── advanced_backtest.py    # Event-driven engine
-│   ├── factor_library.py   # Factor construction
-│   └── screener.py         # Stock screening
-├── 📂 dashboard/           # Visualization
-│   └── terminal.py         # Streamlit dashboard
-├── 📂 config/              # Configuration
-│   └── settings.py         # API keys, preferences
-├── 📂 docs/                # Documentation
-│   ├── SETUP_GUIDE.md      # Installation guide
-│   └── QUICKSTART.md       # Quick start tutorial
-├── main.py                 # CLI entry point
-├── requirements.txt        # Dependencies
-└── makefile               # Build automation
-```
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.9+
-- Git
-
-### One-Click Installation (Recommended)
-
-**Windows (PowerShell):**
-```powershell
-# Clone and enter directory
-git clone https://github.com/yourusername/jr-bloomberg-terminal.git
-cd jr-bloomberg-terminal
-
-# Run setup (creates venv and installs dependencies)
-.\setup.ps1 core    # Minimal install (~20 packages)
-.\setup.ps1 ml      # With ML features
-.\setup.ps1 full    # Everything
-
-# Launch!
-.\run.ps1
-```
-
-**Using Python directly:**
-```bash
-# After cloning, just run:
-python run.py
-
-# The script auto-installs missing dependencies!
-```
-
-### Manual Installation
+## Quick Start
 
 ```bash
-# Create virtual environment
-python -m venv .venv
+# Clone
+git clone https://github.com/Akhilucky/Obsidian.git
+cd Obsidian
 
-# Activate (Windows)
-.venv\Scripts\activate
-
-# Activate (Linux/Mac)
-source .venv/bin/activate
-
-# Install dependencies (choose one):
-pip install -r requirements-core.txt   # Minimal (recommended start)
-pip install -r requirements-ml.txt     # + Machine Learning
-pip install -r requirements-quant.txt  # + Quant Finance
+# Install (choose one)
+pip install -r requirements-core.txt   # Minimal (~20 packages)
 pip install -r requirements.txt        # Full install
-```
 
-### Tiered Dependencies
-
-| Tier | File | Packages | Use Case |
-|------|------|----------|----------|
-| Core | `requirements-core.txt` | ~20 | Basic dashboard, charting, data |
-| ML | `requirements-ml.txt` | ~35 | + ML models, NLP, transformers |
-| Quant | `requirements-quant.txt` | ~30 | + Risk analytics, optimization |
-| Infra | `requirements-infra.txt` | ~30 | + Redis, Celery, FastAPI |
-| Full | `requirements.txt` | ~100 | Everything |
-
-### Launch
-
-```bash
-# Start the dashboard
+# Launch
 python run.py
-
-# Or with Streamlit directly
-streamlit run dashboard/app.py
 ```
 
-### Make Commands
+The dashboard opens at `http://localhost:8501`.
+
+### Agent Pipeline
 
 ```bash
-make install      # Install core dependencies
-make install-ml   # Install with ML
-make install-full # Install everything
-make run          # Start dashboard
-make demo         # Run strategy demos
-make help         # Show all commands
-```
+# Single pass
+python run.py --agents --symbols AAPL MSFT GOOGL
 
-### Configuration (Optional)
+# Continuous mode (every 5 minutes)
+python run.py --agents --continuous --interval 300
 
-Create a `.env` file for enhanced features:
-
-```env
-# Required for OpenBB
-OPENBB_TOKEN=your_openbb_token
-
-# Optional - Enhanced features
-NEWS_API_KEY=your_newsapi_key
-ALPHA_VANTAGE_KEY=your_av_key
-DISCORD_WEBHOOK_URL=your_discord_webhook
+# Indian markets
+python run.py --agents --symbols RELIANCE.NS TCS.NS INFY.NS
 ```
 
 ---
 
-## 📖 Usage Examples
+## Architecture
 
-### Machine Learning Predictions
-
-```python
-from research.ml_models import EnsemblePredictor, get_model_training_data
-
-# Get training data
-df = get_model_training_data("AAPL", period="2y")
-
-# Train ensemble model
-predictor = EnsemblePredictor()
-predictor.train(df)
-
-# Make predictions
-predictions = predictor.predict(df.tail(30))
-print(f"5-day forecast: {predictions['ensemble']}")
+```
+Obsidian/
+├── agents/                  # 10-agent cooperative pipeline
+│   ├── orchestrator.py      # Pipeline runner (parallel per-symbol)
+│   ├── base_agent.py        # Abstract base with observability
+│   ├── data_agent.py        # Data ingestion with retry + fallback
+│   ├── quality_agent.py     # Data validation + confidence scoring
+│   ├── feature_agent.py     # 100+ feature computation
+│   ├── regime_agent.py      # Market regime detection (Hurst + vol)
+│   ├── model_agent.py       # ML ensemble (RF + GB)
+│   ├── decision_agent.py    # Trade idea generation
+│   ├── risk_agent.py        # CVaR limits, position checks
+│   ├── scenario_agent.py    # Stress testing
+│   ├── monitor_agent.py     # Drift detection + alerts
+│   └── lifecycle_agent.py   # Strategy stage management
+├── core/                    # Infrastructure layer
+│   ├── event_bus.py         # Immutable event system (singleton, thread-safe)
+│   ├── data_ingest.py       # Multi-source data pipeline
+│   ├── feature_store.py     # Versioned feature warehouse
+│   ├── signal_generator.py  # Alpha signal generation
+│   ├── risk_management.py   # Portfolio optimization + risk metrics
+│   └── logging_config.py    # Centralized logging
+├── data/
+│   └── indian_markets.py    # NSE/BSE data fetcher
+├── dashboard/
+│   └── app_streamlit.py     # Professional Streamlit dashboard
+├── strategies/              # 6 strategy templates
+├── analytics/               # Sentiment, options, alerts, technical
+├── portfolio/               # Advanced optimization
+├── research/                # ML models, backtesting, screening
+├── pyproject.toml           # Package configuration
+├── run.py                   # Entry point
+└── requirements*.txt        # Tiered dependencies
 ```
 
-### Sentiment Analysis
+---
+
+## Indian Markets
+
+Full support for NSE and BSE through Yahoo Finance suffixes (`.NS` for NSE, `.BO` for BSE):
 
 ```python
-from analytics.sentiment import SentimentEngine
+from data.indian_markets import IndianMarketDataFetcher
 
-engine = SentimentEngine()
+fetcher = IndianMarketDataFetcher()
 
-# Analyze sentiment for a stock
-sentiment = engine.get_comprehensive_sentiment("TSLA")
-print(f"Overall sentiment: {sentiment['overall_score']:.2f}")
-print(f"News sentiment: {sentiment['news']}")
-print(f"Social sentiment: {sentiment['social']}")
+# Fetch NIFTY 50 stocks
+nifty50_data = fetcher.fetch_universe("nifty50")
+
+# Fetch index data
+nifty = fetcher.fetch_index("^NSEI")    # NIFTY 50
+sensex = fetcher.fetch_index("^BSESN")  # SENSEX
+
+# Individual stock
+reliance = fetcher.fetch_stock("RELIANCE", exchange="NSE")
 ```
 
-### Options Pricing
+Pre-built universes: `nifty50`, `sensex30`, `nifty_it`, `nifty_bank`, `indian_etf`
 
-```python
-from analytics.options import OptionsPricer
+---
 
-pricer = OptionsPricer()
-
-# Price a call option
-result = pricer.price_option(
-    spot=150.0,
-    strike=155.0,
-    time_to_expiry=30/365,
-    risk_free_rate=0.05,
-    volatility=0.25,
-    option_type='call'
-)
-
-print(f"Option Price: ${result['price']:.2f}")
-print(f"Delta: {result['greeks']['delta']:.4f}")
-print(f"Gamma: {result['greeks']['gamma']:.4f}")
-```
+## Usage Examples
 
 ### Portfolio Optimization
 
 ```python
-from portfolio.advanced_optimization import BlackLittermanModel
+from core.risk_management import PortfolioOptimizer, OptimizationMethod
+import yfinance as yf
 
-# Initialize with market data
-bl = BlackLittermanModel(
-    tickers=['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'META'],
-    risk_free_rate=0.04
-)
+data = yf.download(['AAPL', 'MSFT', 'GOOGL', 'AMZN'], period='2y')['Adj Close']
+returns = data.pct_change().dropna()
 
-# Add your views
-bl.add_view('AAPL', 0.15)  # AAPL will return 15%
-bl.add_relative_view('GOOGL', 'MSFT', 0.03)  # GOOGL beats MSFT by 3%
+optimizer = PortfolioOptimizer(returns)
+weights = optimizer.optimize(OptimizationMethod.MAX_SHARPE)
+stats = optimizer.portfolio_stats(weights)
 
-# Get optimal weights
-weights = bl.optimize()
-print(f"Optimal allocation: {weights}")
+print(f"Sharpe: {stats['sharpe_ratio']:.2f}")
+print(f"Max DD: {stats['max_drawdown']*100:.1f}%")
 ```
 
-### Cryptocurrency Analysis
+### Agent Pipeline
 
 ```python
-from data.crypto import CryptoDataFetcher, DeFiAnalyzer
+from agents.orchestrator import AgentOrchestrator
 
-# Fetch crypto data
-fetcher = CryptoDataFetcher()
-btc_data = fetcher.get_ohlcv('BTC/USDT', timeframe='1d')
+orch = AgentOrchestrator()
+results = orch.run_pipeline(["AAPL", "RELIANCE.NS", "BTC-USD"])
 
-# DeFi analytics
-defi = DeFiAnalyzer()
-protocol_tvl = defi.get_protocol_tvl('aave')
-yields = defi.get_top_yields(min_tvl=1000000)
-```
-
-### Setting Alerts
-
-```python
-from analytics.alerts import AlertManager, PriceAlert
-
-manager = AlertManager()
-
-# Add price alert
-manager.add_alert(PriceAlert(
-    symbol='NVDA',
-    condition='crosses_above',
-    threshold=500.0,
-    notification_channels=['email', 'discord']
-))
-
-# Start monitoring
-manager.start_monitoring()
+for symbol, result in results.items():
+    d = result.to_dict()
+    print(f"{symbol}: signal={d['data'].get('signal')}, confidence={d['data'].get('confidence')}")
 ```
 
 ---
 
-## 📊 Dashboard Preview
-
-The Streamlit dashboard provides a professional, Bloomberg-style interface:
-
-| Tab | Features |
-|-----|----------|
-| **Overview** | Market summary, indices, top movers |
-| **Screener** | Multi-factor stock screening |
-| **Charts** | Interactive candlestick with indicators |
-| **Options** | Options chain, Greeks, volatility surface |
-| **Crypto** | Real-time crypto prices, DeFi metrics |
-| **ML Predictions** | Train and deploy ML models |
-| **Portfolio** | Optimization, risk analytics |
-| **Alerts** | Manage real-time alerts |
-
----
-
-## 🔧 Technology Stack
+## Technology Stack
 
 | Category | Technologies |
 |----------|-------------|
-| **Data** | OpenBB 4.0+, yfinance, CCXT, NewsAPI |
-| **ML/AI** | TensorFlow, PyTorch, XGBoost, LightGBM, scikit-learn |
-| **NLP** | Transformers, NLTK, VADER, TextBlob |
-| **Optimization** | CVXPY, Riskfolio-lib, SciPy |
-| **Visualization** | Plotly, Streamlit, Matplotlib |
-| **Crypto** | CCXT, Web3.py, CoinGecko API |
+| **Data** | yfinance, CoinGecko, FRED, NSE/BSE via Yahoo |
+| **ML/AI** | scikit-learn, XGBoost, LightGBM |
+| **NLP** | VADER, TextBlob, Transformers |
+| **Optimization** | SciPy, CVXPY |
+| **Visualization** | Plotly, Streamlit |
+| **Indian Markets** | Yahoo Finance (.NS/.BO), NIFTY/SENSEX indices |
 
 ---
 
-## 🎯 Competitive Advantages
+## Competitive Advantages
 
 ### vs Bloomberg Terminal ($24,000/year)
-- ✅ **Free & Open Source**
-- ✅ **Customizable ML Models**
-- ✅ **Python-Native** - Integrate with any library
-- ✅ **Local Data** - No vendor lock-in
+- **Free & Open Source** — No subscription required
+- **Indian Markets** — NSE/BSE support included
+- **Customizable ML** — Modify models, add new features
+- **Python-Native** — Integrate with any library in the ecosystem
 
 ### vs Other Open Source Terminals
-- ✅ **Institutional-Grade Optimization** - Black-Litterman, CVaR
-- ✅ **Production ML Pipeline** - Not just toy models
-- ✅ **Real-Time Alerts** - Multi-channel notifications
-- ✅ **Crypto + TradFi** - Unified platform
+- **Multi-Agent Architecture** — 10 specialized agents with event-driven communication
+- **Indian Market Support** — NIFTY 50, SENSEX, sector indices
+- **Parallel Pipeline** — Concurrent per-symbol processing
+- **Production ML** — Walk-forward validation, regime conditioning
+- **Risk Management** — CVaR, HRP, Black-Litterman, sector neutralization
 
 ---
 
-## 📈 Performance Metrics
-
-Our backtesting shows competitive risk-adjusted returns:
-
-| Strategy | CAGR | Sharpe | Max DD |
-|----------|------|--------|--------|
-| ML Ensemble | 18.3% | 1.42 | -15.2% |
-| Momentum | 14.7% | 1.15 | -18.6% |
-| Mean Reversion | 12.1% | 0.98 | -12.4% |
-| Factor Model | 16.5% | 1.31 | -14.1% |
-
-*Past performance does not guarantee future results.*
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read our contributing guidelines:
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -379,26 +212,21 @@ Contributions are welcome! Please read our contributing guidelines:
 
 ---
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- [OpenBB](https://openbb.co/) - Financial data infrastructure
-- [yfinance](https://github.com/ranaroussi/yfinance) - Yahoo Finance API wrapper
-- [CCXT](https://github.com/ccxt/ccxt) - Cryptocurrency exchange library
-- [Riskfolio-lib](https://github.com/dcajasn/Riskfolio-Lib) - Portfolio optimization
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
+## Acknowledgments
+
+- [yfinance](https://github.com/ranaroussi/yfinance) — Yahoo Finance API wrapper
+- [CCXT](https://github.com/ccxt/ccxt) — Cryptocurrency exchange library
+- [Riskfolio-lib](https://github.com/dcajasn/Riskfolio-Lib) — Portfolio optimization
+- [Streamlit](https://streamlit.io/) — Dashboard framework
+
+---
 
 <p align="center">
-  <b>Built with ❤️ for the quantitative finance community</b>
-</p>
-
-<p align="center">
-  ⭐ Star this repo if you find it useful! ⭐
+  <b>Built for the quantitative finance community</b>
 </p>

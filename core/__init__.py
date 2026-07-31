@@ -35,11 +35,16 @@ def get_portfolio_optimizer(returns):
     from .risk_management import PortfolioOptimizer
     return PortfolioOptimizer(returns)
 
+def get_event_bus():
+    from .event_bus import EventBus
+    return EventBus()
+
 __all__ = [
     'get_data_pipeline',
     'get_feature_store', 
     'get_signal_generator',
     'get_portfolio_optimizer',
+    'get_event_bus',
     'DATA_DIR',
     'FEATURE_DIR',
     'SIGNALS_DIR'

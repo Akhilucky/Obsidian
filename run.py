@@ -8,12 +8,15 @@ Usage:
     python run.py --setup      # Setup environment first
     python run.py --check      # Check dependencies only
     python run.py --demo       # Run demo/examples
+    python run.py --agents     # Run the agent pipeline
+    python run.py --agents --continuous  # Run agents continuously
 """
 
 import subprocess
 import sys
 import os
 from pathlib import Path
+from core.logging_config import setup_logging
 
 # Colors for terminal output
 class Colors:
@@ -348,7 +351,79 @@ def run_demo():
             except Exception as e:
                 print_error(f"Error running {name}: {e}")
 
+def run_agents(continuous=False, symbols=None, interval=300, iterations=None):
+    """Run the multi-agent pipeline."""
+    print_header()
+    
+    print(f"""
+{Colors.BLUE}{Colors.BOLD}
+╔══════════════════════════════════════════════════════════════╗
+║              AEGIS QUANT - AGENT PIPELINE                    ║
+║      Cooperative Multi-Agent Financial Reasoning Engine       ║
+╚══════════════════════════════════════════════════════════════╝
+{Colors.END}
+""")
+    
+    # Add project root to path
+    project_root = str(Path(__file__).parent)
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+    
+    try:
+        from agents.orchestrator import AgentOrchestrator
+        print_success("Agent system loaded")
+    except ImportError as e:
+        print_error(f"Failed to import agent system: {e}")
+        return
+    
+    symbols = symbols or ["AAPL", "MSFT", "GOOGL"]
+    
+    orch = AgentOrchestrator()
+    orch.start()
+    
+    # Print pipeline diagram
+    print(f"\n{orch.pipeline_diagram()}\n")
+    
+    if continuous:
+        print_info(f"Running continuously: {symbols} every {interval}s")
+        print_info("Press Ctrl+C to stop\n")
+        orch.run_continuous(
+            symbols=symbols,
+            interval_seconds=interval,
+            max_iterations=iterations,
+        )
+    else:
+        print_info(f"Running single pipeline pass for: {symbols}\n")
+        results = orch.run_pipeline(symbols)
+        
+        print(f"\n{'='*60}")
+        print(f"{Colors.BOLD}PIPELINE RESULTS{Colors.END}")
+        print(f"{'='*60}")
+        
+        for sym, result in results.items():
+            d = result.to_dict()
+            status = f"{Colors.GREEN}SUCCESS{Colors.END}" if d['success'] else f"{Colors.YELLOW}PARTIAL{Colors.END}"
+            print(f"\n{Colors.BOLD}{sym}{Colors.END} — {status} ({d['duration_ms']:.0f}ms)")
+            print(f"  Stages: {', '.join(d['stages_completed'])}")
+            if d['stages_failed']:
+                print(f"  Failed: {', '.join(d['stages_failed'])}")
+            for key in ['signal', 'confidence', 'regime', 'conviction', 'direction', 'resilience_score']:
+                if key in d['data']:
+                    val = d['data'][key]
+                    if isinstance(val, float):
+                        print(f"  {key}: {val:.4f}")
+                    else:
+                        print(f"  {key}: {val}")
+        
+        import json
+        summary = orch.summary()
+        print(f"\n{Colors.BOLD}Summary:{Colors.END}")
+        print(f"  Success Rate: {summary['recent_success_rate']:.0%}")
+        print(f"  Avg Duration: {summary['avg_duration_ms']:.0f}ms")
+        print(f"  System Health: {summary['system_health']}")
+
 def main():
+    setup_logging()
     print_header()
     
     # Parse arguments
@@ -397,6 +472,27 @@ def main():
     
     if '--demo' in args:
         run_demo()
+        return
+    
+    if '--agents' in args:
+        continuous = '--continuous' in args
+        
+        # Parse --symbols
+        symbols = None
+        for i, a in enumerate(args):
+            if a == '--symbols' and i + 1 < len(args):
+                symbols = [s.strip() for s in args[i + 1].split(',')]
+        
+        # Parse --interval
+        interval = 300
+        for i, a in enumerate(args):
+            if a == '--interval' and i + 1 < len(args):
+                try:
+                    interval = int(args[i + 1])
+                except ValueError:
+                    pass
+        
+        run_agents(continuous=continuous, symbols=symbols, interval=interval)
         return
     
     # Auto-install missing dependencies
