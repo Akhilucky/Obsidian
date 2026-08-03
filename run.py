@@ -359,7 +359,7 @@ def run_agents(continuous=False, symbols=None, interval=300, iterations=None):
     print(f"""
 {Colors.BLUE}{Colors.BOLD}
 ╔══════════════════════════════════════════════════════════════╗
-║              AEGIS QUANT - AGENT PIPELINE                    ║
+║              OBSIDIAN QUANT - AGENT PIPELINE                    ║
 ║      Cooperative Multi-Agent Financial Reasoning Engine       ║
 ╚══════════════════════════════════════════════════════════════╝
 {Colors.END}

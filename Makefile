@@ -11,6 +11,18 @@ java: cpp
 test:
 	 pytest tests/ -v
 
+api:
+	 python api/server.py
+
+web:
+	 cd web && npm run dev
+
+install:
+	 pip install -r requirements.txt
+	 cd web && npm install
+	 bash cpp/build.sh
+	 javac -d java/build java/*.java
+
 dashboard:
 	 streamlit run dashboard/app_streamlit.py
 

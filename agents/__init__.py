@@ -1,5 +1,5 @@
 """
-Agents Module - Aegis Quant Platform
+Agents Module - Obsidian Quant Platform
 ======================================
 Cooperative multi-agent pipeline for:
   Data → Quality → Feature → Regime → Model → Decision → Risk → Execution Sim → Monitoring

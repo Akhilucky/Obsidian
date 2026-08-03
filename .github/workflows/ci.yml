@@ -30,6 +30,22 @@ jobs:
         run: |
           python -m py_compile agents/*.py analytics/*.py core/*.py data/*.py \
             execution/*.py portfolio/*.py research/*.py strategies/*.py \
-            dashboard/*.py run.py
+            dashboard/*.py api/*.py run.py
       - name: Run tests
         run: pytest tests/ -v
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: npm ci
+        working-directory: web
+      - name: Lint
+        run: npm run lint
+        working-directory: web
+      - name: Build
+        run: npm run build
+        working-directory: web

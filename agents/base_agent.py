@@ -1,5 +1,5 @@
 """
-Base Agent - Abstract base for all Aegis Quant Platform agents
+Base Agent - Abstract base for all Obsidian Quant Platform agents
 ================================================================
 Every agent must implement:
   - initialize()

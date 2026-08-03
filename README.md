@@ -1,16 +1,15 @@
 # 🏦 Obsidian Terminal
 
-> **An open-source, institutional-grade quantitative trading platform built in Python. Combines ML-powered predictions, multi-agent cooperative reasoning, real-time market data (US + India), advanced portfolio optimization, and a professional Bloomberg-style dashboard — all free.**
+> **An open-source, institutional-grade quantitative trading platform. Combines a React terminal (Bloomberg × Linear aesthetic), ML-powered predictions, multi-agent cooperative reasoning, C++ compute kernels, Java portfolio optimization, and real-time market data (US + India) — all free.**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ---
 
 ## What It Does
 
-Obsidian Terminal is a full-stack quantitative finance platform that ingests market data, engineers features, runs ML models, evaluates risk, and presents everything through a polished real-time dashboard. It supports **US markets** (NYSE, NASDAQ) and **Indian markets** (NSE, BSE) out of the box.
+Obsidian Terminal is a full-stack quantitative finance platform that ingests market data, engineers features, runs ML models, evaluates risk, and presents everything through a premium React terminal. It supports **US markets** (NYSE, NASDAQ) and **Indian markets** (NSE, BSE) out of the box.
 
 ### Core Capabilities
 
@@ -20,26 +19,26 @@ Obsidian Terminal is a full-stack quantitative finance platform that ingests mar
 | **10-Agent Pipeline** | Data → Quality → Features → Regime → Model → Decision → Risk → Scenario → Monitor → Lifecycle |
 | **ML Predictions** | Random Forest + Gradient Boosting ensemble, regime-conditioned, walk-forward validated |
 | **Feature Store** | 100+ technical indicators with versioning and point-in-time correctness |
-| **Portfolio Optimization** | Mean-Variance, Max Sharpe, Risk Parity, HRP, Black-Litterman, sector neutralization |
+| **Portfolio Optimization** | Mean-Variance, Max Sharpe, Risk Parity, HRP, Black-Litterman — Java closed-form engine |
 | **Risk Management** | VaR, CVaR, stress testing, position limits, 2/20 fee model |
 | **Indian Markets** | NIFTY 50, SENSEX, NIFTY IT, NIFTY Bank — full NSE/BSE support with `.NS`/`.BO` suffixes |
 | **Crypto** | 100+ exchanges via CCXT, DeFi analytics, on-chain metrics |
-| **Dashboard** | Private Banking terminal design — deep navy, gold accents, serif wordmark, 8 tabs, interactive Plotly charts, live market ticker strip |
+| **Terminal** | React + Next.js institutional terminal — dark-first, animated charts, command palette (⌘K), page transitions, C++ kernels for signal computation & Monte Carlo |
 
 ---
 
-## Dashboard Tabs
+## Terminal Pages
 
-| Tab | Features |
+| Page | Features |
 |-----|----------|
-| **Overview** | Market indices, S&P 500 chart, sector heatmap, top alpha signals, live market breadth |
-| **Analysis** | Interactive candlestick charts with SMA, EMA, RSI, MACD, Bollinger Bands, ATR |
-| **Signals** | AI-powered factor decomposition, long/short idea ranking |
-| **Portfolio** | Holdings tracker with P&L, allocation pie chart, disk persistence |
-| **India** | NIFTY 50, SENSEX, NSE/BSE stock search, popular Indian stocks grid |
-| **Research** | Fundamental screening by sector, P/E, margins, ROE |
-| **Agents** | Full pipeline control, per-agent health inspector, event bus stats |
-| **Settings** | Cache management, system info |
+| **Overview** | Market indices ticker strip, S&P 500 animated chart, VIX & market breadth, watchlist quotes |
+| **Analysis** | Per-ticker deep dive — SMA/EMA/Bollinger overlays, RSI & MACD panels, ATR metrics |
+| **Signals** | Composite alpha scores, conviction bars, strategy bias gauge, alert feed |
+| **Portfolio** | Holdings with P&L, allocation donut, sector exposure, animated totals |
+| **India** | NIFTY 50 / SENSEX indices, NSE/BSE stock browser, popular Indian stocks grid |
+| **Research** | Strategy library with Sharpe/win-rate, factor exposures, market performance |
+| **Agents** | Pipeline architecture view, per-agent health inspector |
+| **Settings** | Cache management, system info, runtime status |
 
 ---
 
@@ -50,15 +49,19 @@ Obsidian Terminal is a full-stack quantitative finance platform that ingests mar
 git clone https://github.com/Akhilucky/Obsidian.git
 cd Obsidian
 
-# Install (choose one)
-pip install -r requirements-core.txt   # Minimal (~20 packages)
-pip install -r requirements.txt        # Full install
+# Install Python deps + native kernels + frontend
+pip install -r requirements.txt
+make cpp          # C++ kernels + Java optimizer
+cd web && npm install && cd ..
 
-# Launch
-python run.py
+# Terminal 1 — API server (port 8000)
+python api/server.py
+
+# Terminal 2 — React frontend (port 3000)
+cd web && npm run dev
 ```
 
-The dashboard opens at `http://localhost:8501`.
+The terminal opens at `http://localhost:3000`.
 
 ### Agent Pipeline
 
@@ -96,13 +99,22 @@ Obsidian/
 │   ├── event_bus.py         # Immutable event system (singleton, thread-safe)
 │   ├── data_ingest.py       # Multi-source data pipeline
 │   ├── feature_store.py     # Versioned feature warehouse
-│   ├── signal_generator.py  # Alpha signal generation
-│   ├── risk_management.py   # Portfolio optimization + risk metrics
-│   └── logging_config.py    # Centralized logging
+│   ├── fast_kernels.py      # C++ compute kernels (ctypes loader)
+│   └── java_optimizer.py    # Java mean-variance optimizer bridge
 ├── data/
 │   └── indian_markets.py    # NSE/BSE data fetcher
+├── api/
+│   └── server.py            # Flask JSON API (port 8000)
+├── web/                     # React terminal (Next.js, port 3000)
+│   ├── app/                 # 8 pages: overview/analysis/signals/india/...
+│   ├── components/          # Shell, charts, UI kit
+│   └── lib/                 # API client, types, formatting
+├── cpp/
+│   └── obsidian_core.cpp    # C++ kernels (SMA signals, Monte Carlo)
+├── java/
+│   └── PortfolioOptimizer.java  # Closed-form MV optimization
 ├── dashboard/
-│   └── app_streamlit.py     # Professional Streamlit dashboard
+│   └── app_streamlit.py     # Legacy Streamlit dashboard (optional)
 ├── strategies/              # 6 strategy templates
 ├── analytics/               # Sentiment, options, alerts, technical
 ├── portfolio/               # Advanced optimization
@@ -179,8 +191,10 @@ for symbol, result in results.items():
 | **Data** | yfinance, CoinGecko, FRED, NSE/BSE via Yahoo |
 | **ML/AI** | scikit-learn, XGBoost, LightGBM |
 | **NLP** | VADER, TextBlob, Transformers |
-| **Optimization** | SciPy, CVXPY |
-| **Visualization** | Plotly, Streamlit |
+| **Optimization** | Java closed-form engine, SciPy, CVXPY |
+| **Compute Kernels** | C++ (ctypes) — SMA signals, Monte Carlo, max drawdown |
+| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind, Framer Motion, Recharts |
+| **Backend** | Flask JSON API (port 8000) |
 | **Indian Markets** | Yahoo Finance (.NS/.BO), NIFTY/SENSEX indices |
 
 ---
@@ -199,6 +213,7 @@ for symbol, result in results.items():
 - **Parallel Pipeline** — Concurrent per-symbol processing
 - **Production ML** — Walk-forward validation, regime conditioning
 - **Risk Management** — CVaR, HRP, Black-Litterman, sector neutralization
+- **Native Performance** — C++ kernels (114x faster signal generation) and a Java optimizer, with automatic Python fallbacks
 
 ---
 
@@ -223,7 +238,9 @@ MIT License — see [LICENSE](LICENSE) for details.
 - [yfinance](https://github.com/ranaroussi/yfinance) — Yahoo Finance API wrapper
 - [CCXT](https://github.com/ccxt/ccxt) — Cryptocurrency exchange library
 - [Riskfolio-lib](https://github.com/dcajasn/Riskfolio-Lib) — Portfolio optimization
-- [Streamlit](https://streamlit.io/) — Dashboard framework
+- [Next.js](https://nextjs.org/) — React terminal framework
+- [Recharts](https://recharts.org/) — Charting library
+- [Framer Motion](https://www.framer.com/motion/) — UI motion
 
 ---
 

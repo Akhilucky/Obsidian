@@ -1,7 +1,7 @@
 """
 Agent Registry
 ===============
-Central registry for all agents in the Aegis Quant Platform.
+Central registry for all agents in the Obsidian Quant Platform.
 
 To add a new agent:
 1. Create file in /agents

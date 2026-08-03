@@ -385,7 +385,7 @@ def main():
     """Run the pipeline from command line."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Aegis Quant Agent Pipeline")
+    parser = argparse.ArgumentParser(description="Obsidian Quant Agent Pipeline")
     parser.add_argument("--symbols", nargs="+", default=["AAPL", "MSFT", "GOOGL"],
                         help="Symbols to analyze")
     parser.add_argument("--source", default="yahoo", help="Data source")

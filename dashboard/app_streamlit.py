@@ -1,5 +1,5 @@
 """
-AEGIS — Private Markets Terminal
+OBSIDIAN — Private Markets Terminal
 ==================================
 Institutional-grade quantitative trading platform.
 Design language: Private Banking — deep navy, warm gold, serif wordmark.
@@ -22,7 +22,7 @@ import json
 # ============================================================================
 
 st.set_page_config(
-    page_title="AEGIS · Private Markets Terminal",
+    page_title="OBSIDIAN · Private Markets Terminal",
     page_icon="🜚",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -803,7 +803,7 @@ def bank_header(page_label: str):
         <div class="bank-brand">
             <div class="bank-monogram">A</div>
             <div>
-                <div class="bank-wordmark">Aegis</div>
+                <div class="bank-wordmark">Obsidian</div>
                 <div class="bank-sub">Private Markets Terminal</div>
             </div>
         </div>
@@ -909,7 +909,7 @@ with st.sidebar:
                         color:#0A0F16;">A</div>
             <div>
                 <div style="font-family:'Playfair Display', serif; font-size:1.15rem; font-weight:700;
-                            color:var(--text-primary); letter-spacing:0.02em; line-height:1.2;">Aegis</div>
+                            color:var(--text-primary); letter-spacing:0.02em; line-height:1.2;">Obsidian</div>
                 <div style="font-family:var(--font-mono); font-size:0.55rem; color:var(--accent);
                             letter-spacing:0.18em; text-transform:uppercase;">Private Markets</div>
             </div>
@@ -1635,7 +1635,7 @@ elif page == "Settings":
         ("Framework", "Streamlit"),
         ("Design System", "Private Banking"),
         ("Chart Engine", "Plotly"),
-        ("Agent Engine", "Aegis Orchestrator"),
+        ("Agent Engine", "Obsidian Orchestrator"),
     ]
 
     rows_html = ""
