@@ -51,12 +51,18 @@ weights = mf.construct_portfolio(selected, price_data)
 
 # Trend Following
 from .trend_following import (
-    TrendFollowingSuite,
-    MovingAverageCrossover,
+    Signal,
+    TradeSignal,
+    BaseStrategy,
+    SMAStrategy,
+    EMAStrategy,
+    TripleMAStrategy,
     BreakoutStrategy,
-    MomentumStrategy,
-    TrendConfig,
-    create_trend_following_strategy
+    TurtleBreakout,
+    RSIMomentumStrategy,
+    MACDMomentumStrategy,
+    ADXTrendStrength,
+    TrendFollowingEnsemble,
 )
 
 # Mean Reversion
@@ -84,7 +90,6 @@ from .market_making import (
     Order,
     OrderSide,
     OrderType,
-    create_market_making_strategy
 )
 
 # Sentiment
@@ -130,12 +135,18 @@ from .multi_factor import (
 
 __all__ = [
     # Trend Following
-    'TrendFollowingSuite',
-    'MovingAverageCrossover',
+    'Signal',
+    'TradeSignal',
+    'BaseStrategy',
+    'SMAStrategy',
+    'EMAStrategy',
+    'TripleMAStrategy',
     'BreakoutStrategy',
-    'MomentumStrategy',
-    'TrendConfig',
-    'create_trend_following_strategy',
+    'TurtleBreakout',
+    'RSIMomentumStrategy',
+    'MACDMomentumStrategy',
+    'ADXTrendStrength',
+    'TrendFollowingEnsemble',
     
     # Mean Reversion
     'MeanReversionSuite',
@@ -159,7 +170,6 @@ __all__ = [
     'Order',
     'OrderSide',
     'OrderType',
-    'create_market_making_strategy',
     
     # Sentiment
     'SentimentSuite',

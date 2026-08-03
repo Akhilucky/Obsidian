@@ -4,9 +4,20 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
 import numpy as np
-import cvxpy as cp
 import yfinance as yf
 from portfolio.manager import PortfolioManager
+
+try:
+    import cvxpy as cp
+    CVXPY_AVAILABLE = True
+except ImportError:
+    CVXPY_AVAILABLE = False
+
+try:
+    from scipy.optimize import minimize
+    SCIPY_AVAILABLE = True
+except ImportError:
+    SCIPY_AVAILABLE = False
 
 try:
     from data.openbb_integration import OpenBBIntegration
@@ -98,23 +109,35 @@ class RiskManager:
         # Calculate expected returns
         expected_returns = returns.mean()
         
-        # Define optimization variables
-        weights = cp.Variable(len(tickers))
-        
         # Define optimization problem
-        portfolio_variance = cp.quad_form(weights, cov_matrix)
-        objective = cp.Minimize(portfolio_variance)
-        constraints = [
-            cp.sum(weights) == 1,
-            weights >= 0
-        ]
-        
-        # Solve optimization problem
-        problem = cp.Problem(objective, constraints)
-        problem.solve()
-        
-        # Get optimal weights
-        optimal_weights = weights.value
+        if CVXPY_AVAILABLE:
+            weights = cp.Variable(len(tickers))
+            portfolio_variance = cp.quad_form(weights, cov_matrix)
+            objective = cp.Minimize(portfolio_variance)
+            constraints = [
+                cp.sum(weights) == 1,
+                weights >= 0
+            ]
+
+            # Solve optimization problem
+            problem = cp.Problem(objective, constraints)
+            problem.solve()
+            optimal_weights = weights.value
+        elif SCIPY_AVAILABLE:
+            cov = cov_matrix.values
+
+            def portfolio_variance(w):
+                return w @ cov @ w
+
+            constraints = [{'type': 'eq', 'fun': lambda w: np.sum(w) - 1}]
+            bounds = [(0, 1)] * len(tickers)
+            x0 = np.ones(len(tickers)) / len(tickers)
+
+            result = minimize(portfolio_variance, x0, method='SLSQP',
+                              bounds=bounds, constraints=constraints)
+            optimal_weights = result.x
+        else:
+            raise ImportError("cvxpy or scipy required for portfolio optimization")
         
         # Map weights to tickers
         optimization_results = {ticker: weight for ticker, weight in zip(tickers, optimal_weights)}
@@ -170,18 +193,33 @@ class RiskManager:
         bl_returns = implied_returns + ((cov_matrix @ p_matrix.T) @ np.linalg.inv(p_matrix @ cov_matrix @ p_matrix.T + omega_matrix)) @ (q_vector - p_matrix @ implied_returns)
         
         # Optimize portfolio with Black-Litterman returns
-        weights = cp.Variable(len(tickers))
-        portfolio_variance = cp.quad_form(weights, cov_matrix)
-        objective = cp.Minimize(portfolio_variance)
-        constraints = [
-            cp.sum(weights) == 1,
-            weights >= 0
-        ]
-        problem = cp.Problem(objective, constraints)
-        problem.solve()
-        
-        optimal_weights = weights.value
-        
+        if CVXPY_AVAILABLE:
+            weights = cp.Variable(len(tickers))
+            portfolio_variance = cp.quad_form(weights, cov_matrix)
+            objective = cp.Minimize(portfolio_variance)
+            constraints = [
+                cp.sum(weights) == 1,
+                weights >= 0
+            ]
+            problem = cp.Problem(objective, constraints)
+            problem.solve()
+            optimal_weights = weights.value
+        elif SCIPY_AVAILABLE:
+            cov = cov_matrix.values
+
+            def bl_portfolio_variance(w):
+                return w @ cov @ w
+
+            constraints = [{'type': 'eq', 'fun': lambda w: np.sum(w) - 1}]
+            bounds = [(0, 1)] * len(tickers)
+            x0 = np.ones(len(tickers)) / len(tickers)
+
+            result = minimize(bl_portfolio_variance, x0, method='SLSQP',
+                              bounds=bounds, constraints=constraints)
+            optimal_weights = result.x
+        else:
+            raise ImportError("cvxpy or scipy required for Black-Litterman optimization")
+
         return {ticker: weight for ticker, weight in zip(tickers, optimal_weights)}
 
 class HRPOptimizer:
