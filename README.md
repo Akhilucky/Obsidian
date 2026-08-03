@@ -37,6 +37,7 @@ Obsidian Terminal is a full-stack quantitative finance platform that ingests mar
 | **Analysis** | Per-ticker deep dive — SMA/EMA/Bollinger overlays, RSI & MACD panels, ATR, comparative total return (COMP) |
 | **Signals** | Composite alpha scores, conviction bars, strategy bias gauge, alert feed |
 | **Portfolio** | Aladdin-style analytics — historical & parametric VaR, 5 stress scenarios, compliance violations, sector exposure, editable holdings |
+| **Quant Lab** | Tool-trial harness (benchmarks candidate libraries vs ours, auto-integrates winners) + ML strategy lab (walk-forward model comparison vs the RF/GB ensemble) |
 | **Stock Profile** | DES + FA/RV/DVD/OMON — fundamentals, peer comparison, dividend history, options chain |
 | **India** | NIFTY 50 / SENSEX indices, NSE/BSE stock browser, popular Indian stocks grid (batched quotes) |
 | **Research** | Strategy library with Sharpe/win-rate, factor exposures, market performance |
@@ -78,6 +79,41 @@ python run.py --agents --continuous --interval 300
 # Indian markets
 python run.py --agents --symbols RELIANCE.NS TCS.NS INFY.NS
 ```
+
+---
+
+## Data Providers
+
+Quotes, history and news are served by a key-gated provider chain — the first configured
+provider that returns data wins, with **yfinance as the always-available fallback**:
+
+| Provider | Env var | Free tier | Notes |
+|----------|---------|-----------|-------|
+| Alpha Vantage | `ALPHA_VANTAGE_KEY` | 25 req/day | EOD quotes, Fama-French-style analytics, **News & Sentiment** with vendor labels |
+| Financial Modeling Prep | `FMP_API_KEY` | 250 req/day | Quotes + fundamentals (150+ endpoints), best free fundamentals source |
+| Polygon.io / Massive | `POLYGON_API_KEY` | 5 req/min | EOD, ~2y history, 15-min delayed on free tier |
+| yfinance | — | unlimited | Default; used when no keys configured or providers fail |
+
+Free-tier daily quotas are tracked in `data_cache/provider_quota.json` so the chain
+degrades gracefully instead of burning quota. Order is overridable via `DATA_PROVIDER_ORDER`
+or `data_cache/provider_trials.json` (written by the tool-trial harness `--apply`).
+
+---
+
+## Tool Audit (from `research/tool_trials.py`)
+
+Every candidate tool is benchmarked against our current implementation — run
+`python research/tool_trials.py --all` or see the Quant Lab page:
+
+| Tool | Verdict | Notes |
+|------|---------|-------|
+| **pandas-datareader (Fama-French)** | ✅ ADOPT | Keyless 5-factor daily data (Mkt-RF, SMB, HML, RMW, CMA) — now a feature source in the ML lab |
+| **Alpha Vantage** (quote/news) | ✅ ADOPT (with key) | EOD + vendor news sentiment labels; wired as chain priority |
+| **FMP / Polygon** | ✅ ADOPT (with key) | Wired into the chain; free tiers are research-grade |
+| **quantstats** | ⚠️ EQUIVALENT/KEEP | Matches our metrics; keep lightweight `RiskMetrics` in the API, quantstats as validation layer |
+| **ta** (indicators) | KEEP | Wilder vs rolling-mean RSI (corr 0.90); ours stays |
+| **pandas-datareader (yahoo/stooq)** | ✗ SKIP | Sources decommissioned by the library |
+| OpenBB, FinRL, Backtrader, bt, TA-Lib, DBs (Timescale/QuestDB/ClickHouse/Influx), Superset, Grafana, Dash, news scrapers | not integrated | Heavy dependency or infra cost vs our terminal; revisit per need |
 
 ---
 

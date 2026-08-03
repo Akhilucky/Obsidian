@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import {
-  BarChart3, Bot, FlaskConical, Filter, Globe, Landmark, LayoutDashboard,
+  BarChart3, BookOpen, Bot, FlaskConical, Filter, Globe, Landmark, LayoutDashboard,
   Radar, Settings, TrendingUp, Wallet,
 } from "lucide-react"
 
@@ -16,7 +16,8 @@ const ITEMS = [
   { label: "Signals", path: "/signals", icon: Radar, keywords: "alerts buy sell alpha ANR" },
   { label: "India", path: "/india", icon: Landmark, keywords: "nse bse nifty sensex" },
   { label: "Portfolio", path: "/portfolio", icon: Wallet, keywords: "holdings pnl assets risk var aladdin" },
-  { label: "Research", path: "/research", icon: FlaskConical, keywords: "backtest factor models" },
+  { label: "Quant Lab", path: "/lab", icon: FlaskConical, keywords: "trials benchmark experiments models fama french factors LAB" },
+  { label: "Research", path: "/research", icon: BookOpen, keywords: "backtest factor models" },
   { label: "Agents", path: "/agents", icon: Bot, keywords: "pipeline orchestrator ai" },
   { label: "Settings", path: "/settings", icon: Settings, keywords: "config cache system" },
 ]

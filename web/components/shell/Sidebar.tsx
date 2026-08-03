@@ -6,6 +6,7 @@ import { motion } from "framer-motion"
 import {
   Activity,
   BarChart3,
+  BookOpen,
   Bot,
   FlaskConical,
   Filter,
@@ -28,7 +29,8 @@ const NAV = [
   ]},
   { section: "Management", items: [
     { label: "Portfolio", path: "/portfolio", icon: Wallet },
-    { label: "Research", path: "/research", icon: FlaskConical },
+    { label: "Quant Lab", path: "/lab", icon: FlaskConical },
+    { label: "Research", path: "/research", icon: BookOpen },
     { label: "Agents", path: "/agents", icon: Bot },
   ]},
   { section: "System", items: [

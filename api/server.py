@@ -25,6 +25,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from agents.agent_registry import create_default_registry
+from core.data_providers import get_quote_chain, get_news_chain, provider_status
 
 DATA_CACHE = ROOT / "data_cache"
 DATA_CACHE.mkdir(exist_ok=True)
@@ -127,6 +128,11 @@ def fetch_stock_data(ticker: str, period: str = "1y") -> pd.DataFrame:
 
 def fetch_realtime_quote(ticker: str) -> dict:
     def _load():
+        chain = get_quote_chain(ticker)
+        if chain:
+            return {k: chain[k] for k in (
+                "price", "change", "change_pct", "volume", "market_cap",
+                "pe_ratio", "name", "sector", "high", "low", "open", "prev_close")}
         info = yf.Ticker(ticker).info
         return {
             "price": info.get("regularMarketPrice", info.get("currentPrice", 0)),
@@ -412,6 +418,11 @@ def chart():
 def quote():
     ticker = request.args.get("ticker", "AAPL")
     return jsonify(fetch_realtime_quote(ticker))
+
+
+@app.route("/api/providers")
+def providers():
+    return jsonify(provider_status())
 
 
 @app.route("/api/india")
@@ -1161,6 +1172,31 @@ def news():
 
 
 def _news(ticker: str, limit: int):
+    chain = get_news_chain(ticker, limit)
+    if chain:
+        result = {"ticker": ticker, "items": [], "net_sentiment": 0.0, "provider": chain["provider"]}
+        for n in chain["items"][:limit]:
+            ts = n.get("time", 0)
+            if isinstance(ts, str):
+                try:
+                    ts = time.mktime(time.strptime(ts, "%Y-%m-%dT%H:%M:%SZ"))
+                except ValueError:
+                    ts = 0
+            score = _sentiment_score(n.get("title", ""))
+            result["items"].append({
+                "title": n.get("title", ""),
+                "publisher": n.get("publisher", "Unknown"),
+                "link": n.get("link", ""),
+                "time": int(ts),
+                "sentiment": round(score, 3),
+                "label": _sentiment_label(score),
+                "vendor": n.get("provider_label", "neutral"),
+            })
+        if result["items"]:
+            result["net_sentiment"] = round(
+                sum(i["sentiment"] for i in result["items"]) / len(result["items"]), 3)
+        result["net_label"] = _sentiment_label(result["net_sentiment"])
+        return result
     try:
         t = yf.Ticker(ticker)
         items = t.news if hasattr(t, "news") else []
@@ -1242,6 +1278,35 @@ def clear_cache():
     for f in DATA_CACHE.glob("*.parquet"):
         f.unlink()
     return jsonify({"status": "cleared"})
+
+
+# ============================================================================
+# QUANT RESEARCH — tool trials + ML strategy lab (research/tool_trials.py, ml_strategy_lab.py)
+# ============================================================================
+
+@app.route("/api/trials")
+def trials():
+    def _run():
+        from research.tool_trials import run_trials
+        results = run_trials()
+        return {"results": [r.__dict__ for r in results]}
+    try:
+        return jsonify(_cached("trials", 900, _run))
+    except Exception as e:
+        return jsonify({"results": [], "error": str(e)})
+
+
+@app.route("/api/ml-lab")
+def ml_lab():
+    universe = request.args.get("universe")
+    syms = [s.strip().upper() for s in universe.split(",")] if universe else None
+    def _run():
+        from research.ml_strategy_lab import run_lab
+        return run_lab(universe=syms)
+    try:
+        return jsonify(_cached(f"ml_lab:{universe or 'default'}", 1800, _run))
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@
 quantstats>=0.0.62
 empyrical>=0.5.5
 arch>=6.1.0
+pandas-datareader>=0.10.0
 
 # Portfolio Optimization (may need CVXOPT system install)
 # cvxpy>=1.4.0
