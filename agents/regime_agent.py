@@ -21,7 +21,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from enum import Enum
 
@@ -134,7 +134,7 @@ class RegimeDetectionAgent(BaseAgent):
             "hurst": round(float(hurst), 4),
             "vol_regime": vol_regime,
             "liquidity_score": round(float(liquidity_score), 4),
-            "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         })
         
         self._metrics.confidence_scores.append(confidence)

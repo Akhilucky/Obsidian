@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import time
 import logging
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 
@@ -124,7 +124,7 @@ class AgentOrchestrator:
                     logger.error(f"Pipeline failed for {symbol}: {e}")
                     result = PipelineResult(
                         symbol=symbol,
-                        timestamp=datetime.now(datetime.timezone.utc).isoformat(),
+                        timestamp=datetime.now(timezone.utc).isoformat(),
                         success=False,
                         stages_failed=[f"ThreadPoolError: {str(e)}"],
                     )
@@ -153,7 +153,7 @@ class AgentOrchestrator:
             while self._running:
                 iteration += 1
                 logger.info(f"\n{'='*60}")
-                logger.info(f"Pipeline iteration #{iteration} — {datetime.now(datetime.timezone.utc).isoformat()}")
+                logger.info(f"Pipeline iteration #{iteration} — {datetime.now(timezone.utc).isoformat()}")
                 logger.info(f"{'='*60}")
                 
                 self.run_pipeline(symbols, **kwargs)
@@ -189,7 +189,7 @@ class AgentOrchestrator:
         start_ts = time.time()
         result = PipelineResult(
             symbol=symbol,
-            timestamp=datetime.now(datetime.timezone.utc).isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             success=False,
         )
         
@@ -341,7 +341,7 @@ class AgentOrchestrator:
             ),
             "system_health": health.get("system_status", "unknown"),
             "agent_count": health.get("agent_count", 0),
-            "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     
     def pipeline_diagram(self) -> str:

@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import logging
 from typing import Any, Dict, List, Optional, Type
-from datetime import datetime
+from datetime import datetime, timezone
 
 from agents.base_agent import BaseAgent
 from core.event_bus import EventBus
@@ -101,7 +101,7 @@ class AgentRegistry:
             "system_status": "healthy" if all_healthy else "degraded",
             "agents": results,
             "agent_count": len(self._agents),
-            "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     
     def metrics_all(self) -> Dict[str, Any]:
@@ -112,7 +112,7 @@ class AgentRegistry:
         return {
             "agents": results,
             "bus_stats": self._bus.stats,
-            "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     
     def logs_all(self, last_n: int = 50) -> Dict[str, List[str]]:

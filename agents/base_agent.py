@@ -16,7 +16,7 @@ Every agent exposes:
 import logging
 import time
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from collections import deque
 from dataclasses import dataclass, field
@@ -123,7 +123,7 @@ class BaseAgent(ABC):
         check = self.health_check()
         check["agent"] = self.name
         check["initialized"] = self._is_initialized
-        check["timestamp"] = datetime.now(datetime.timezone.utc).isoformat()
+        check["timestamp"] = datetime.now(timezone.utc).isoformat()
         return check
     
     # ──────────────────────────────────────────────
@@ -152,7 +152,7 @@ class BaseAgent(ABC):
             count = self._metrics.events_consumed or 1
             self._metrics.total_latency_ms = total
             self._metrics.avg_latency_ms = total / count
-            self._metrics.last_run = datetime.now(datetime.timezone.utc).isoformat()
+            self._metrics.last_run = datetime.now(timezone.utc).isoformat()
     
     def _publish(self, event_type: str, payload: Dict[str, Any]):
         """Helper to publish an event and track metrics."""
@@ -164,7 +164,7 @@ class BaseAgent(ABC):
     
     def _log(self, message: str, level: str = "info"):
         """Internal structured logging."""
-        ts = datetime.now(datetime.timezone.utc).isoformat()
+        ts = datetime.now(timezone.utc).isoformat()
         entry = f"[{ts}] [{self.name}] [{level.upper()}] {message}"
         self._logs.append(entry)
         getattr(logger, level, logger.info)(entry)

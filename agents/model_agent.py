@@ -22,7 +22,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from enum import Enum
 
@@ -190,7 +190,7 @@ class ModelingAgent(BaseAgent):
         result["symbol"] = symbol
         result["horizon"] = horizon
         result["regime"] = regime
-        result["timestamp"] = datetime.now(datetime.timezone.utc).isoformat()
+        result["timestamp"] = datetime.now(timezone.utc).isoformat()
         
         self._last_signals[symbol] = result
         self._metrics.confidence_scores.append(result.get("confidence", 0))

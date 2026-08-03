@@ -115,7 +115,7 @@ Write-Host ""
 
 Write-Host "Manual Commands:" -ForegroundColor Cyan
 Write-Host "  .\.venv\Scripts\Activate.ps1     # Activate environment" -ForegroundColor White
-Write-Host "  streamlit run dashboard\app.py  # Run dashboard" -ForegroundColor White
+Write-Host "  streamlit run dashboard\app_streamlit.py  # Run dashboard" -ForegroundColor White
 Write-Host "  python strategies\ml_models.py  # Run ML demo" -ForegroundColor White
 Write-Host ""
 

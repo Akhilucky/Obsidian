@@ -19,7 +19,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from collections import deque
 from enum import Enum
@@ -90,7 +90,7 @@ class MonitoringAgent(BaseAgent):
                 "symbol": payload.get("symbol"),
                 "signal": payload.get("signal"),
                 "confidence": payload.get("confidence"),
-                "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             })
             self._check_model_decay(payload)
         
@@ -133,7 +133,7 @@ class MonitoringAgent(BaseAgent):
             "backtest_accuracy": round(baseline, 4),
             "decay": round(decay, 4),
             "decayed": decay > MODEL_DECAY_THRESHOLD,
-            "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         
         if result["decayed"]:
@@ -267,7 +267,7 @@ class MonitoringAgent(BaseAgent):
         for alert in self._alerts:
             if alert.get("id") == alert_id:
                 alert["resolved"] = True
-                alert["resolved_at"] = datetime.now(datetime.timezone.utc).isoformat()
+                alert["resolved_at"] = datetime.now(timezone.utc).isoformat()
                 break
     
     # ──────────────────────────────────────────────
@@ -304,7 +304,7 @@ class MonitoringAgent(BaseAgent):
             "severity": severity.value,
             "message": message,
             "details": details,
-            "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "resolved": False,
         }
         self._alerts.append(alert)

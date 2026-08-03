@@ -17,9 +17,9 @@ if (-not (Test-Path $venvPython)) {
 
 switch ($Action) {
     "dashboard" {
-        Write-Host "Starting Bloomberg Terminal Dashboard..." -ForegroundColor Cyan
-        if (Test-Path "dashboard\app.py") {
-            & $venvStreamlit run dashboard\app.py
+        Write-Host "Starting AEGIS Terminal Dashboard..." -ForegroundColor Cyan
+        if (Test-Path "dashboard\app_streamlit.py") {
+            & $venvStreamlit run dashboard\app_streamlit.py
         } else {
             & $venvPython run.py
         }

@@ -18,7 +18,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from enum import Enum
 
@@ -147,12 +147,12 @@ class LifecycleAgent(BaseAgent):
             "strategy_id": strategy_id,
             "name": name,
             "stage": StrategyStage.RESEARCH.value,
-            "registered_at": datetime.now(datetime.timezone.utc).isoformat(),
-            "stage_entered_at": datetime.now(datetime.timezone.utc).isoformat(),
+            "registered_at": datetime.now(timezone.utc).isoformat(),
+            "stage_entered_at": datetime.now(timezone.utc).isoformat(),
             "metadata": metadata or {},
             "history": [{
                 "stage": StrategyStage.RESEARCH.value,
-                "entered_at": datetime.now(datetime.timezone.utc).isoformat(),
+                "entered_at": datetime.now(timezone.utc).isoformat(),
                 "reason": "Initial registration",
             }],
         }
@@ -197,10 +197,10 @@ class LifecycleAgent(BaseAgent):
         # Execute transition
         old_stage = current_stage.value
         state["stage"] = next_stage.value
-        state["stage_entered_at"] = datetime.now(datetime.timezone.utc).isoformat()
+        state["stage_entered_at"] = datetime.now(timezone.utc).isoformat()
         state["history"].append({
             "stage": next_stage.value,
-            "entered_at": datetime.now(datetime.timezone.utc).isoformat(),
+            "entered_at": datetime.now(timezone.utc).isoformat(),
             "reason": f"Promoted from {old_stage}",
             "evidence": evidence,
         })
@@ -209,7 +209,7 @@ class LifecycleAgent(BaseAgent):
             "strategy_id": strategy_id,
             "from_stage": old_stage,
             "to_stage": next_stage.value,
-            "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "evidence": evidence,
         }
         self._transition_log.append(transition)
@@ -238,10 +238,10 @@ class LifecycleAgent(BaseAgent):
         old_stage = state["stage"]
         
         state["stage"] = StrategyStage.RETIRED.value
-        state["stage_entered_at"] = datetime.now(datetime.timezone.utc).isoformat()
+        state["stage_entered_at"] = datetime.now(timezone.utc).isoformat()
         state["history"].append({
             "stage": StrategyStage.RETIRED.value,
-            "entered_at": datetime.now(datetime.timezone.utc).isoformat(),
+            "entered_at": datetime.now(timezone.utc).isoformat(),
             "reason": reason,
         })
         
@@ -250,7 +250,7 @@ class LifecycleAgent(BaseAgent):
             "from_stage": old_stage,
             "to_stage": StrategyStage.RETIRED.value,
             "reason": reason,
-            "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         self._transition_log.append(transition)
         

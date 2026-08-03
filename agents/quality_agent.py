@@ -20,7 +20,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
@@ -86,7 +86,7 @@ class DataQualityAgent(BaseAgent):
             "anomalies": anomalies,
             "confidence": round(confidence, 4),
             "source": source,
-            "validated_at": datetime.now(datetime.timezone.utc).isoformat(),
+            "validated_at": datetime.now(timezone.utc).isoformat(),
         }
         self._validation_results[symbol] = result
         self._metrics.confidence_scores.append(confidence)
@@ -187,7 +187,7 @@ class DataQualityAgent(BaseAgent):
             "anomalies": anomalies,
             "issues": issues,
             "rows": len(df),
-            "validated_at": datetime.now(datetime.timezone.utc).isoformat(),
+            "validated_at": datetime.now(timezone.utc).isoformat(),
         }
         
         self._validation_results[symbol] = result

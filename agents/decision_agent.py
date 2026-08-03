@@ -15,7 +15,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 
@@ -209,7 +209,7 @@ class DecisionAgent(BaseAgent):
             horizon=horizon,
             explanation=explanation,
             risk_context=risk_ctx,
-            timestamp=datetime.now(datetime.timezone.utc).isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
         )
     
     def _compute_conviction(self, signal: str, confidence: float,

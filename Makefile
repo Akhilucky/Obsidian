@@ -3,7 +3,7 @@
 	 docker-compose up -d
 
 dashboard:
-	 streamlit run dashboard/app.py
+	 streamlit run dashboard/app_streamlit.py
 
 backtest:
 	 python research/backtester.py

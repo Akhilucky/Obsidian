@@ -148,11 +148,12 @@ def install_missing(packages):
 
 def run_dashboard():
     """Run the Streamlit dashboard."""
-    dashboard_path = Path(__file__).parent / 'dashboard' / 'app.py'
+    dashboard_path = Path(__file__).parent / 'dashboard' / 'app_streamlit.py'
     
     if not dashboard_path.exists():
         # Try alternative paths
         alt_paths = [
+            Path(__file__).parent / 'dashboard' / 'app.py',
             Path(__file__).parent / 'dashboard' / 'main.py',
             Path(__file__).parent / 'app.py',
         ]

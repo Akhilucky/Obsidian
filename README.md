@@ -24,7 +24,7 @@ Obsidian Terminal is a full-stack quantitative finance platform that ingests mar
 | **Risk Management** | VaR, CVaR, stress testing, position limits, 2/20 fee model |
 | **Indian Markets** | NIFTY 50, SENSEX, NIFTY IT, NIFTY Bank — full NSE/BSE support with `.NS`/`.BO` suffixes |
 | **Crypto** | 100+ exchanges via CCXT, DeFi analytics, on-chain metrics |
-| **Dashboard** | Professional Streamlit UI with 8 tabs, interactive Plotly charts, "Midnight SaaS" design |
+| **Dashboard** | Private Banking terminal design — deep navy, gold accents, serif wordmark, 8 tabs, interactive Plotly charts, live market ticker strip |
 
 ---
 

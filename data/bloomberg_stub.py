@@ -8,8 +8,8 @@ class BloombergData:
         dates = pd.date_range(start=start_date, end=end_date, freq='D')
         data = pd.DataFrame({
             'Date': dates,
-            field: np.random.randn(len(dates)).cumsum() + 100
-            for field in fields
+            **{field: np.random.randn(len(dates)).cumsum() + 100
+               for field in fields}
         })
         return data
 

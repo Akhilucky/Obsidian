@@ -1,7 +1,8 @@
 """
-AEGIS — Institutional Quantitative Trading Platform
-=====================================================
-B2B SaaS dashboard — Midnight SaaS aesthetic.
+AEGIS — Private Markets Terminal
+==================================
+Institutional-grade quantitative trading platform.
+Design language: Private Banking — deep navy, warm gold, serif wordmark.
 """
 
 import streamlit as st
@@ -21,77 +22,82 @@ import json
 # ============================================================================
 
 st.set_page_config(
-    page_title="Aegis · Quant Platform",
-    page_icon="⬡",
+    page_title="AEGIS · Private Markets Terminal",
+    page_icon="🜚",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 # ============================================================================
-# DESIGN SYSTEM — Midnight SaaS
+# DESIGN SYSTEM — Private Banking
 # ============================================================================
-# Aesthetic: Linear.app × Bloomberg Terminal × Vercel Dashboard
-# Fonts: Bricolage Grotesque (display) · Outfit (body) · JetBrains Mono (data)
-# Palette: Near-black base, indigo accent (#6366F1), emerald/rose signals
+# Aesthetic: Institutional private bank (Morgan Stanley × Bloomberg refined)
+# Fonts: Playfair Display (wordmark) · Inter (body) · JetBrains Mono (data)
+# Palette: Deep navy base, warm gold accent, restrained signal colors
 # ============================================================================
 
 st.markdown("""
 <style>
     /* ─── Typography ─── */
-    @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 
     /* ─── Design Tokens ─── */
     :root {
-        /* Surfaces */
-        --bg-root:        #09090B;
-        --bg-primary:     #0F0F12;
-        --bg-secondary:   #16161A;
-        --bg-tertiary:    #1C1C21;
-        --bg-elevated:    #222228;
-        --bg-hover:       #27272D;
-        --bg-active:      #2E2E35;
+        /* Surfaces — deep navy */
+        --bg-root:        #0A0F16;
+        --bg-primary:     #0F1620;
+        --bg-secondary:   #141D2A;
+        --bg-tertiary:    #1A2534;
+        --bg-elevated:    #202E40;
+        --bg-hover:       #26384E;
+        --bg-active:      #2C425C;
 
-        /* Accent — Indigo */
-        --accent:         #6366F1;
-        --accent-hover:   #818CF8;
-        --accent-muted:   rgba(99, 102, 241, 0.12);
-        --accent-border:  rgba(99, 102, 241, 0.25);
-        --accent-glow:    0 0 20px rgba(99, 102, 241, 0.15);
+        /* Accent — Bank Gold */
+        --accent:         #C9A227;
+        --accent-hover:   #E3BC4E;
+        --accent-muted:   rgba(201, 162, 39, 0.12);
+        --accent-border:  rgba(201, 162, 39, 0.28);
+        --accent-glow:    0 0 24px rgba(201, 162, 39, 0.12);
+
+        /* Secondary — Institutional Blue */
+        --navy:           #3B82C4;
+        --navy-muted:     rgba(59, 130, 196, 0.12);
+        --navy-border:    rgba(59, 130, 196, 0.25);
 
         /* Signal Colors */
-        --success:        #10B981;
-        --success-muted:  rgba(16, 185, 129, 0.12);
-        --danger:         #F43F5E;
-        --danger-muted:   rgba(244, 63, 94, 0.12);
-        --warning:        #F59E0B;
-        --warning-muted:  rgba(245, 158, 11, 0.12);
-        --info:           #38BDF8;
-        --info-muted:     rgba(56, 189, 248, 0.12);
+        --success:        #34C88A;
+        --success-muted:  rgba(52, 200, 138, 0.12);
+        --danger:         #E4573D;
+        --danger-muted:   rgba(228, 87, 61, 0.12);
+        --warning:        #E8A13D;
+        --warning-muted:  rgba(232, 161, 61, 0.12);
+        --info:           #4FA3E3;
+        --info-muted:     rgba(79, 163, 227, 0.12);
 
         /* Text */
-        --text-primary:   #FAFAFA;
-        --text-secondary: #A1A1AA;
-        --text-tertiary:  #71717A;
-        --text-muted:     #52525B;
+        --text-primary:   #F0F4F9;
+        --text-secondary: #9DAEBD;
+        --text-tertiary:  #64748B;
+        --text-muted:     #47556B;
 
         /* Borders */
-        --border:         #27272A;
-        --border-subtle:  #1E1E22;
-        --border-hover:   #3F3F46;
+        --border:         #1F2C3D;
+        --border-subtle:  #182232;
+        --border-hover:   #33465F;
 
         /* Typography */
-        --font-display:   'Bricolage Grotesque', system-ui, sans-serif;
-        --font-body:      'Outfit', system-ui, sans-serif;
+        --font-display:   'Playfair Display', Georgia, serif;
+        --font-body:      'Inter', system-ui, sans-serif;
         --font-mono:      'JetBrains Mono', 'Menlo', monospace;
 
         /* Effects */
-        --radius-xs:      4px;
-        --radius-sm:      6px;
-        --radius:         8px;
-        --radius-lg:      12px;
-        --shadow-sm:      0 1px 2px rgba(0,0,0,0.3);
-        --shadow-md:      0 2px 8px rgba(0,0,0,0.4);
-        --shadow-lg:      0 8px 32px rgba(0,0,0,0.5);
+        --radius-xs:      3px;
+        --radius-sm:      5px;
+        --radius:         7px;
+        --radius-lg:      10px;
+        --shadow-sm:      0 1px 3px rgba(0,0,0,0.35);
+        --shadow-md:      0 4px 16px rgba(0,0,0,0.4);
+        --shadow-lg:      0 12px 40px rgba(0,0,0,0.5);
     }
 
     /* ─── GLOBAL ─── */
@@ -106,99 +112,106 @@ st.markdown("""
     .stDeployButton { display: none; }
     div[data-testid="stDecoration"] { display: none; }
 
-    /* ─── SIDEBAR ─── */
-    section[data-testid="stSidebar"] {
-        background: var(--bg-primary);
-        border-right: 1px solid var(--border);
-    }
-
-    section[data-testid="stSidebar"] .stRadio > div {
-        gap: 2px;
-    }
-
-    section[data-testid="stSidebar"] .stRadio > div > label {
-        background: transparent;
-        border: none;
-        border-radius: var(--radius-sm);
-        padding: 0.55rem 0.75rem;
-        font-family: var(--font-body);
-        font-size: 0.88rem;
-        font-weight: 450;
-        color: var(--text-secondary);
-        transition: all 0.15s ease;
-        cursor: pointer;
-    }
-
-    section[data-testid="stSidebar"] .stRadio > div > label:hover {
-        background: var(--bg-hover);
-        color: var(--text-primary);
-    }
-
-    section[data-testid="stSidebar"] .stRadio > div > label[data-checked="true"],
-    section[data-testid="stSidebar"] .stRadio > div [data-checked="true"] ~ label {
-        background: var(--accent-muted);
-        color: var(--accent-hover);
-        font-weight: 550;
-    }
-
-    /* ─── PAGE HEADER ─── */
-    .page-header {
+    /* ─── TOP HEADER BAR ─── */
+    .bank-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 0 1.25rem 0;
-        margin-bottom: 1.25rem;
+        padding: 0.9rem 1.4rem;
+        margin: -2rem -1.4rem 1.5rem -1.4rem;
+        background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
         border-bottom: 1px solid var(--border);
     }
-    .page-header-left {
+    .bank-brand {
         display: flex;
-        flex-direction: column;
-        gap: 2px;
+        align-items: center;
+        gap: 0.9rem;
     }
-    .page-title {
+    .bank-monogram {
+        width: 38px; height: 38px;
+        background: linear-gradient(135deg, var(--accent), #8a6d1a);
+        border-radius: 6px;
+        display: flex; align-items: center; justify-content: center;
         font-family: var(--font-display);
-        font-size: 1.5rem;
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: #0A0F16;
+        letter-spacing: -0.02em;
+        box-shadow: var(--accent-glow);
+    }
+    .bank-wordmark {
+        font-family: var(--font-display);
+        font-size: 1.35rem;
         font-weight: 700;
         color: var(--text-primary);
-        letter-spacing: -0.02em;
-        line-height: 1.2;
+        letter-spacing: 0.02em;
+        line-height: 1.1;
     }
-    .page-subtitle {
-        font-family: var(--font-body);
-        font-size: 0.82rem;
-        font-weight: 400;
-        color: var(--text-tertiary);
+    .bank-sub {
+        font-family: var(--font-mono);
+        font-size: 0.58rem;
+        color: var(--accent);
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        margin-top: 2px;
     }
-    .page-header-right {
+    .bank-header-right {
         display: flex;
-        gap: 0.75rem;
+        gap: 0.7rem;
         align-items: center;
     }
+    .bank-ticker {
+        font-family: var(--font-mono);
+        font-size: 0.66rem;
+        color: var(--text-tertiary);
+        letter-spacing: 0.08em;
+        padding: 0.35rem 0.8rem;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--bg-primary);
+    }
+    .bank-clock {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: var(--text-secondary);
+        padding: 0.35rem 0.8rem;
+        border-left: 2px solid var(--accent);
+        background: var(--bg-primary);
+    }
+
+    /* ─── STATUS BADGES ─── */
     .status-badge {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 0.3rem 0.75rem;
-        border-radius: 99px;
+        padding: 0.28rem 0.75rem;
+        border-radius: 3px;
         font-family: var(--font-mono);
-        font-size: 0.7rem;
+        font-size: 0.64rem;
         font-weight: 500;
-        letter-spacing: 0.03em;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border: 1px solid transparent;
     }
     .badge-live {
         background: var(--success-muted);
         color: var(--success);
-        border: 1px solid rgba(16,185,129,0.2);
+        border-color: rgba(52,200,138,0.25);
     }
     .badge-ai {
         background: var(--accent-muted);
-        color: var(--accent-hover);
-        border: 1px solid var(--accent-border);
+        color: var(--accent);
+        border-color: var(--accent-border);
     }
     .badge-warn {
         background: var(--warning-muted);
         color: var(--warning);
-        border: 1px solid rgba(245,158,11,0.2);
+        border-color: rgba(232,161,61,0.25);
+    }
+    .badge-info {
+        background: var(--navy-muted);
+        color: var(--info);
+        border-color: var(--navy-border);
     }
     .live-dot {
         width: 6px; height: 6px;
@@ -211,37 +224,103 @@ st.markdown("""
         50% { opacity: 0.4; }
     }
 
+    /* ─── SIDEBAR NAV BUTTONS ─── */
+    section[data-testid="stSidebar"] .stButton > button {
+        width: 100%;
+        justify-content: flex-start;
+        background: transparent;
+        border: none;
+        border-left: 3px solid transparent;
+        border-radius: 0;
+        padding: 0.55rem 0.85rem;
+        font-family: var(--font-body);
+        font-size: 0.85rem;
+        font-weight: 450;
+        color: var(--text-secondary);
+        text-align: left;
+        transition: all 0.15s ease;
+    }
+    section[data-testid="stSidebar"] .stButton > button:hover {
+        background: var(--bg-secondary);
+        border-left-color: var(--border-hover);
+        color: var(--text-primary);
+        box-shadow: none;
+    }
+    section[data-testid="stSidebar"] .stButton > button.active {
+        background: var(--accent-muted);
+        border-left-color: var(--accent);
+        color: var(--accent);
+        font-weight: 600;
+    }
+    section[data-testid="stSidebar"] .stButton {
+        margin-bottom: 0px;
+    }
+
+    /* ─── SIDEBAR ─── */
+    section[data-testid="stSidebar"] {
+        background: var(--bg-primary);
+        border-right: 1px solid var(--border);
+    }
+
+    /* ─── PAGE HEADER ─── */
+    .page-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding: 0 0 1rem 0;
+        margin-bottom: 1.1rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .page-title {
+        font-family: var(--font-display);
+        font-size: 1.55rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+    }
+    .page-subtitle {
+        font-family: var(--font-body);
+        font-size: 0.8rem;
+        font-weight: 400;
+        color: var(--text-tertiary);
+        margin-top: 3px;
+    }
+
     /* ─── METRIC CARDS ─── */
     .metric-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 1px;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0;
         background: var(--border);
         border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius);
         overflow: hidden;
         margin-bottom: 1.25rem;
+        box-shadow: var(--shadow-sm);
     }
     .metric-cell {
         background: var(--bg-primary);
-        padding: 1rem 1.15rem;
+        padding: 0.9rem 1.1rem;
         transition: background 0.15s ease;
+        border-top: 2px solid transparent;
     }
     .metric-cell:hover {
         background: var(--bg-secondary);
+        border-top-color: var(--accent);
     }
     .metric-label {
-        font-family: var(--font-body);
-        font-size: 0.72rem;
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
         font-weight: 500;
         color: var(--text-tertiary);
         text-transform: uppercase;
-        letter-spacing: 0.06em;
-        margin-bottom: 0.35rem;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.4rem;
     }
     .metric-value {
         font-family: var(--font-mono);
-        font-size: 1.35rem;
+        font-size: 1.25rem;
         font-weight: 600;
         color: var(--text-primary);
         letter-spacing: -0.02em;
@@ -249,9 +328,9 @@ st.markdown("""
     }
     .metric-delta {
         font-family: var(--font-mono);
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-weight: 500;
-        margin-top: 0.2rem;
+        margin-top: 0.25rem;
     }
     .delta-up { color: var(--success); }
     .delta-down { color: var(--danger); }
@@ -260,112 +339,126 @@ st.markdown("""
     .card {
         background: var(--bg-primary);
         border: 1px solid var(--border);
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius);
         overflow: hidden;
         margin-bottom: 1rem;
+        box-shadow: var(--shadow-sm);
     }
     .card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.85rem 1.15rem;
+        padding: 0.75rem 1.1rem;
         border-bottom: 1px solid var(--border);
+        background: var(--bg-secondary);
     }
     .card-title {
         font-family: var(--font-body);
-        font-size: 0.88rem;
+        font-size: 0.8rem;
         font-weight: 600;
         color: var(--text-primary);
+        letter-spacing: 0.02em;
     }
     .card-body {
-        padding: 1rem 1.15rem;
+        padding: 0.9rem 1.1rem;
     }
 
-    /* ─── DATA TABLE ROWS ─── */
+    /* ─── DATA ROWS ─── */
     .data-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.55rem 0;
+        padding: 0.5rem 0;
         border-bottom: 1px solid var(--border-subtle);
     }
     .data-row:last-child { border-bottom: none; }
     .data-row:hover {
         background: var(--bg-secondary);
-        margin: 0 -1.15rem;
-        padding-left: 1.15rem;
-        padding-right: 1.15rem;
+        margin: 0 -1.1rem;
+        padding-left: 1.1rem;
+        padding-right: 1.1rem;
     }
     .data-sym {
         font-family: var(--font-mono);
         font-weight: 600;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: var(--text-primary);
     }
     .data-val {
         font-family: var(--font-mono);
-        font-size: 0.82rem;
+        font-size: 0.78rem;
         font-weight: 500;
     }
     .val-pos { color: var(--success); }
     .val-neg { color: var(--danger); }
     .val-neutral { color: var(--text-secondary); }
 
-    /* ─── AGENT STATUS CARDS ─── */
+    /* ─── AGENT CHIPS ─── */
     .agent-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 0.6rem;
+        gap: 0.55rem;
         margin-bottom: 1rem;
     }
     .agent-chip {
         background: var(--bg-secondary);
         border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 0.75rem 0.6rem;
+        border-radius: var(--radius-sm);
+        padding: 0.7rem 0.55rem;
         text-align: center;
         transition: all 0.2s ease;
     }
     .agent-chip:hover {
-        border-color: var(--border-hover);
+        border-color: var(--accent-border);
         background: var(--bg-tertiary);
     }
-    .agent-chip.ok { border-left: 3px solid var(--success); }
-    .agent-chip.warn { border-left: 3px solid var(--warning); }
-    .agent-chip.err { border-left: 3px solid var(--danger); }
-    .agent-chip-icon { font-size: 1.1rem; margin-bottom: 0.25rem; }
+    .agent-chip.ok { border-top: 2px solid var(--success); }
+    .agent-chip.warn { border-top: 2px solid var(--warning); }
+    .agent-chip.err { border-top: 2px solid var(--danger); }
+    .agent-chip-icon { font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-muted); margin-bottom: 0.2rem; }
     .agent-chip-name {
         font-family: var(--font-body);
-        font-size: 0.7rem;
+        font-size: 0.66rem;
         font-weight: 600;
         color: var(--text-primary);
         line-height: 1.3;
     }
     .agent-chip-status {
         font-family: var(--font-mono);
-        font-size: 0.6rem;
+        font-size: 0.56rem;
         font-weight: 500;
         margin-top: 0.15rem;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
     }
 
     /* ─── BUTTONS ─── */
     .stButton > button {
-        background: var(--accent);
-        color: #fff;
-        border: none;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-hover);
         border-radius: var(--radius-sm);
-        padding: 0.55rem 1.3rem;
+        padding: 0.5rem 1.2rem;
         font-family: var(--font-body);
-        font-weight: 600;
-        font-size: 0.85rem;
+        font-weight: 500;
+        font-size: 0.82rem;
         letter-spacing: 0.01em;
         transition: all 0.15s ease;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
     .stButton > button:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        box-shadow: var(--accent-glow);
+    }
+    .stButton > button[kind="primary"] {
+        background: var(--accent);
+        color: #0A0F16;
+        border: 1px solid var(--accent);
+        font-weight: 600;
+    }
+    .stButton > button[kind="primary"]:hover {
         background: var(--accent-hover);
+        color: #0A0F16;
         box-shadow: var(--accent-glow);
     }
 
@@ -378,7 +471,7 @@ st.markdown("""
         border-radius: var(--radius-sm) !important;
         color: var(--text-primary) !important;
         font-family: var(--font-mono) !important;
-        font-size: 0.85rem !important;
+        font-size: 0.82rem !important;
     }
     .stTextInput > div > div > input:focus,
     .stSelectbox > div > div > div:focus-within {
@@ -397,17 +490,16 @@ st.markdown("""
     .stTabs [data-baseweb="tab"] {
         background: transparent;
         border-radius: var(--radius-xs);
-        padding: 0.45rem 1rem;
+        padding: 0.4rem 1rem;
         color: var(--text-tertiary);
         font-family: var(--font-body);
         font-weight: 500;
-        font-size: 0.82rem;
+        font-size: 0.8rem;
     }
     .stTabs [aria-selected="true"] {
         background: var(--bg-elevated);
-        color: var(--text-primary) !important;
+        color: var(--accent) !important;
         font-weight: 600;
-        box-shadow: var(--shadow-sm);
     }
 
     /* ─── SCROLLBAR ─── */
@@ -418,17 +510,17 @@ st.markdown("""
 
     /* ─── STREAMLIT OVERRIDES ─── */
     .stMetric label {
-        font-family: var(--font-body) !important;
-        font-size: 0.72rem !important;
+        font-family: var(--font-mono) !important;
+        font-size: 0.62rem !important;
         font-weight: 500 !important;
         color: var(--text-tertiary) !important;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.1em;
     }
     .stMetric [data-testid="stMetricValue"] {
         font-family: var(--font-mono) !important;
         font-weight: 600 !important;
-        font-size: 1.3rem !important;
+        font-size: 1.2rem !important;
         color: var(--text-primary) !important;
     }
     .stMetric [data-testid="stMetricDelta"] {
@@ -444,52 +536,63 @@ st.markdown("""
         border-color: var(--border-hover);
     }
 
-    /* Plotly container */
     .js-plotly-plot .plotly .main-svg { border-radius: var(--radius); }
 
     /* Signal intensity */
     .sig-strong-buy  { color: var(--success); font-weight: 600; }
-    .sig-buy         { color: #6EE7B7; }
+    .sig-buy         { color: #7BD8AE; }
     .sig-neutral     { color: var(--text-secondary); }
-    .sig-sell        { color: #FDA4AF; }
+    .sig-sell        { color: #F2A08D; }
     .sig-strong-sell { color: var(--danger); font-weight: 600; }
 
-    /* Section separator */
+    /* Section helpers */
     .section-sep {
         height: 1px;
         background: var(--border);
         border: none;
-        margin: 1.5rem 0;
+        margin: 1.4rem 0;
     }
     .section-title {
         font-family: var(--font-body);
-        font-size: 0.88rem;
+        font-size: 0.82rem;
         font-weight: 600;
         color: var(--text-primary);
         margin-bottom: 0.75rem;
+        letter-spacing: 0.02em;
     }
     .section-subtitle {
         font-family: var(--font-body);
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         color: var(--text-tertiary);
         margin-bottom: 0.75rem;
     }
 
-    /* Streamlit dataframe tweaks */
     .stDataFrame { border-radius: var(--radius) !important; }
     [data-testid="stDataFrame"] > div { border-radius: var(--radius) !important; }
 
-    /* Kill default padding bloat */
     .block-container {
         padding-top: 2rem !important;
         padding-bottom: 1rem !important;
     }
 
-    /* JSON viewer */
     .stJson { background: var(--bg-secondary) !important; border-radius: var(--radius) !important; }
+
+    /* Sidebar brand block */
+    .sb-brand {
+        padding: 1rem 0.4rem 0.8rem 0.4rem;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 0.8rem;
+    }
+    .sb-section-label {
+        font-family: var(--font-mono);
+        font-size: 0.56rem;
+        color: var(--text-muted);
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        padding: 0.6rem 0.85rem 0.3rem 0.85rem;
+    }
 </style>
 """, unsafe_allow_html=True)
-
 
 # ============================================================================
 # DATA FUNCTIONS
@@ -597,24 +700,24 @@ def signal_class(val: float) -> str:
 
 
 # ============================================================================
-# CHART SYSTEM — Midnight SaaS Plotly Theme
+# CHART SYSTEM — Private Bank Plotly Theme
 # ============================================================================
 
-C_GREEN  = "#10B981"
-C_RED    = "#F43F5E"
-C_INDIGO = "#6366F1"
-C_SKY    = "#38BDF8"
-C_AMBER  = "#F59E0B"
-C_BG     = "rgba(9,9,11,0)"
-C_GRID   = "rgba(255,255,255,0.04)"
-C_FONT   = dict(family="JetBrains Mono, monospace", color="#71717A", size=10)
+C_GREEN  = "#34C88A"
+C_RED    = "#E4573D"
+C_GOLD   = "#C9A227"
+C_SKY    = "#4FA3E3"
+C_NAVY   = "#3B82C4"
+C_BG     = "rgba(10,15,22,0)"
+C_GRID   = "rgba(255,255,255,0.05)"
+C_FONT   = dict(family="JetBrains Mono, monospace", color="#64748B", size=10)
 
 
 def _base_layout(height: int = 400, **overrides) -> dict:
     base = dict(
         template="plotly_dark",
         paper_bgcolor=C_BG,
-        plot_bgcolor="rgba(15,15,18,0.9)",
+        plot_bgcolor="rgba(15,22,32,0.92)",
         height=height,
         margin=dict(l=48, r=16, t=28, b=28),
         font=C_FONT,
@@ -642,16 +745,16 @@ def create_advanced_chart(df: pd.DataFrame, ticker: str) -> go.Figure:
 
     if "sma_20" in df.columns:
         fig.add_trace(go.Scatter(x=df.index, y=df["sma_20"], name="SMA 20",
-                                 line=dict(color=C_INDIGO, width=1.2)), row=1, col=1)
+                                 line=dict(color=C_GOLD, width=1.2)), row=1, col=1)
     if "sma_50" in df.columns:
         fig.add_trace(go.Scatter(x=df.index, y=df["sma_50"], name="SMA 50",
                                  line=dict(color=C_SKY, width=1.2)), row=1, col=1)
     if "bb_upper" in df.columns:
         fig.add_trace(go.Scatter(x=df.index, y=df["bb_upper"], name="BB Upper",
-                                 line=dict(color="rgba(99,102,241,0.3)", dash="dash")), row=1, col=1)
+                                 line=dict(color="rgba(201,162,39,0.3)", dash="dash")), row=1, col=1)
         fig.add_trace(go.Scatter(x=df.index, y=df["bb_lower"], name="BB Lower",
-                                 line=dict(color="rgba(99,102,241,0.3)", dash="dash"),
-                                 fill="tonexty", fillcolor="rgba(99,102,241,0.04)"), row=1, col=1)
+                                 line=dict(color="rgba(201,162,39,0.3)", dash="dash"),
+                                 fill="tonexty", fillcolor="rgba(201,162,39,0.04)"), row=1, col=1)
 
     vol_colors = [C_GREEN if c >= o else C_RED for c, o in zip(df["close"], df["open"])]
     fig.add_trace(go.Bar(x=df.index, y=df["volume"], name="Volume",
@@ -659,7 +762,7 @@ def create_advanced_chart(df: pd.DataFrame, ticker: str) -> go.Figure:
 
     if "rsi" in df.columns:
         fig.add_trace(go.Scatter(x=df.index, y=df["rsi"], name="RSI",
-                                 line=dict(color=C_INDIGO, width=1.5)), row=3, col=1)
+                                 line=dict(color=C_GOLD, width=1.5)), row=3, col=1)
         fig.add_hline(y=70, line_dash="dash", line_color=C_RED, row=3, col=1)
         fig.add_hline(y=30, line_dash="dash", line_color=C_GREEN, row=3, col=1)
         fig.add_hrect(y0=30, y1=70, fillcolor="rgba(255,255,255,0.015)", row=3, col=1)
@@ -671,7 +774,7 @@ def create_advanced_chart(df: pd.DataFrame, ticker: str) -> go.Figure:
         fig.add_trace(go.Scatter(x=df.index, y=df["macd"], name="MACD",
                                  line=dict(color=C_SKY, width=1)), row=4, col=1)
         fig.add_trace(go.Scatter(x=df.index, y=df["macd_signal"], name="Signal",
-                                 line=dict(color=C_INDIGO, width=1)), row=4, col=1)
+                                 line=dict(color=C_GOLD, width=1)), row=4, col=1)
 
     fig.update_layout(**_base_layout(height=680), xaxis_rangeslider_visible=False)
     for i in range(1, 5):
@@ -685,8 +788,62 @@ def create_advanced_chart(df: pd.DataFrame, ticker: str) -> go.Figure:
 
 
 # ============================================================================
-# HELPERS — Page Header & Metric Grid
+# HELPERS — Header, Metric Grid, Ticker Strip
 # ============================================================================
+
+def bank_header(page_label: str):
+    """Render the top private-banking header bar."""
+    now = datetime.now()
+    mkt_open = 9 <= now.hour < 16 and now.weekday() < 5
+    mkt_state = "MARKET OPEN" if mkt_open else "MARKET CLOSED"
+    state_color = "var(--success)" if mkt_open else "var(--text-muted)"
+
+    st.markdown(f"""
+    <div class="bank-header">
+        <div class="bank-brand">
+            <div class="bank-monogram">A</div>
+            <div>
+                <div class="bank-wordmark">Aegis</div>
+                <div class="bank-sub">Private Markets Terminal</div>
+            </div>
+        </div>
+        <div class="bank-header-right">
+            <span class="bank-ticker">{page_label}</span>
+            <span class="status-badge badge-live"><span class="live-dot"></span>Live Data</span>
+            <span class="status-badge badge-ai">AI Engine</span>
+            <span class="bank-clock" style="color:{state_color};">{mkt_state} · {now.strftime("%H:%M:%S")}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def ticker_strip(symbols: dict):
+    """Render a horizontal market ticker strip. symbols = {name: ticker}"""
+    cells = []
+    for name, tkr in symbols.items():
+        q = fetch_realtime_quote(tkr)
+        price = q.get("price", 0)
+        chg = q.get("change_pct", 0)
+        if price and price > 0:
+            c = "var(--success)" if chg >= 0 else "var(--danger)"
+            sgn = "+" if chg >= 0 else ""
+            cells.append(f"""
+            <div style="flex:1; min-width:140px; padding:0.6rem 1rem;
+                        background:var(--bg-primary); border-right:1px solid var(--border);">
+                <div style="font-family:var(--font-mono); font-size:0.58rem; color:var(--text-tertiary);
+                            letter-spacing:0.12em; text-transform:uppercase;">{name}</div>
+                <div style="display:flex; align-items:baseline; gap:0.5rem; margin-top:2px;">
+                    <span style="font-family:var(--font-mono); font-weight:600; font-size:0.95rem; color:var(--text-primary);">{price:,.2f}</span>
+                    <span style="font-family:var(--font-mono); font-size:0.72rem; color:{c};">{sgn}{chg:.2f}%</span>
+                </div>
+            </div>""")
+    if cells:
+        st.markdown(f"""
+        <div style="display:flex; overflow-x:auto; border:1px solid var(--border);
+                    border-radius:var(--radius); margin-bottom:1.25rem; background:var(--bg-secondary);">
+            {''.join(cells)}
+        </div>""", unsafe_allow_html=True)
+
 
 def page_header(title: str, subtitle: str = "", badges: list = None):
     badges_html = ""
@@ -699,11 +856,11 @@ def page_header(title: str, subtitle: str = "", badges: list = None):
 
     st.markdown(f"""
     <div class="page-header">
-        <div class="page-header-left">
+        <div>
             <div class="page-title">{title}</div>
             {"<div class='page-subtitle'>" + subtitle + "</div>" if subtitle else ""}
         </div>
-        <div class="page-header-right">{badges_html}</div>
+        <div style="display:flex; gap:0.5rem;">{badges_html}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -726,40 +883,61 @@ def metric_grid(items: list):
     st.markdown(f'<div class="metric-grid">{cells}</div>', unsafe_allow_html=True)
 
 
+def section_sep():
+    st.markdown('<div class="section-sep"></div>', unsafe_allow_html=True)
+
+
+def section_title(title: str):
+    st.markdown(f'<div class="section-title">{title}</div>', unsafe_allow_html=True)
+
+
 # ============================================================================
 # SIDEBAR
 # ============================================================================
 
 with st.sidebar:
-    # Brand
+    if "current_page" not in st.session_state:
+        st.session_state.current_page = "Overview"
+    page = st.session_state.current_page
+
     st.markdown("""
-    <div style="padding:0.8rem 0 0.5rem 0;">
+    <div class="sb-brand">
         <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:32px; height:32px; background:linear-gradient(135deg, #6366F1, #818CF8);
-                        border-radius:8px; display:flex; align-items:center; justify-content:center;
-                        font-size:1rem; color:#fff; font-weight:700;">A</div>
+            <div style="width:34px; height:34px; background:linear-gradient(135deg, #C9A227, #8a6d1a);
+                        border-radius:6px; display:flex; align-items:center; justify-content:center;
+                        font-family:'Playfair Display', serif; font-weight:700; font-size:1.1rem;
+                        color:#0A0F16;">A</div>
             <div>
-                <div style="font-family:var(--font-display); font-size:1.1rem; font-weight:700;
-                            color:var(--text-primary); letter-spacing:-0.02em; line-height:1.2;">Aegis</div>
-                <div style="font-family:var(--font-mono); font-size:0.58rem; color:var(--text-muted);
-                            letter-spacing:0.1em; text-transform:uppercase;">Quant Platform</div>
+                <div style="font-family:'Playfair Display', serif; font-size:1.15rem; font-weight:700;
+                            color:var(--text-primary); letter-spacing:0.02em; line-height:1.2;">Aegis</div>
+                <div style="font-family:var(--font-mono); font-size:0.55rem; color:var(--accent);
+                            letter-spacing:0.18em; text-transform:uppercase;">Private Markets</div>
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="section-sep"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="sb-section-label">Markets</div>', unsafe_allow_html=True)
+    for label in ["Overview", "Analysis", "Signals", "India"]:
+        if st.button(label, key=f"nav_{label}", use_container_width=True):
+            st.session_state.current_page = label
 
-    page = st.radio(
-        "Navigation",
-        ["Overview", "Analysis", "Signals", "Portfolio", "India", "Research", "Agents", "Settings"],
-        label_visibility="collapsed",
-    )
+    st.markdown('<div class="sb-section-label">Management</div>', unsafe_allow_html=True)
+    for label in ["Portfolio", "Research", "Agents"]:
+        if st.button(label, key=f"nav_{label}", use_container_width=True):
+            st.session_state.current_page = label
+
+    st.markdown('<div class="sb-section-label">System</div>', unsafe_allow_html=True)
+    for label in ["Settings"]:
+        if st.button(label, key=f"nav_{label}", use_container_width=True):
+            st.session_state.current_page = label
+
+    page = st.session_state.current_page
 
     st.markdown('<div class="section-sep"></div>', unsafe_allow_html=True)
 
     # Quick Quote
-    st.markdown('<div class="section-title" style="font-size:0.78rem;">Quick Quote</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title" style="font-size:0.72rem;">Quick Quote</div>', unsafe_allow_html=True)
     ticker_input = st.text_input("Symbol", value="AAPL", key="sidebar_ticker",
                                  label_visibility="collapsed").upper()
 
@@ -770,13 +948,13 @@ with st.sidebar:
             d_sgn = "+" if q["change"] >= 0 else ""
             st.markdown(f"""
             <div style="background:var(--bg-secondary); border:1px solid var(--border);
-                        border-radius:var(--radius); padding:0.85rem; margin-top:0.5rem;">
-                <div style="font-family:var(--font-body); font-size:0.72rem; color:var(--text-tertiary);
-                            text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.3rem;">
+                        border-radius:var(--radius); padding:0.8rem; margin-top:0.5rem;">
+                <div style="font-family:var(--font-body); font-size:0.7rem; color:var(--text-tertiary);
+                            text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.3rem;">
                     {q['name']}</div>
-                <div style="font-family:var(--font-mono); font-size:1.25rem; font-weight:600;
+                <div style="font-family:var(--font-mono); font-size:1.2rem; font-weight:600;
                             color:var(--text-primary);">${q['price']:.2f}</div>
-                <div class="{d_cls}" style="font-family:var(--font-mono); font-size:0.78rem; margin-top:0.15rem;">
+                <div class="{d_cls}" style="font-family:var(--font-mono); font-size:0.76rem; margin-top:0.15rem;">
                     {d_sgn}{q['change']:.2f} ({d_sgn}{q['change_pct']:.2f}%)</div>
             </div>
             """, unsafe_allow_html=True)
@@ -792,37 +970,32 @@ with st.sidebar:
     st.markdown(f"""
     <div style="display:flex; align-items:center; gap:8px; padding:0.5rem 0;">
         <div style="width:6px; height:6px; border-radius:50%; background:{st_color};"></div>
-        <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-tertiary);">
+        <span style="font-family:var(--font-mono); font-size:0.7rem; color:var(--text-tertiary);">
             {st_text} · {now.strftime("%H:%M")}</span>
     </div>
     """, unsafe_allow_html=True)
 
 
 # ============================================================================
+# TOP HEADER
+# ============================================================================
+
+bank_header(page)
+
+# ============================================================================
 # PAGE: OVERVIEW (Dashboard)
 # ============================================================================
 
 if page == "Overview":
-    page_header("Overview", "Market data & portfolio snapshot",
+    page_header("Overview", "Institutional market snapshot",
                 [{"type": "live", "label": "Live", "dot": True},
                  {"type": "ai", "label": "Real-Time Data"}])
 
-    # Market indices strip
-    indices = {
+    # Market indices ticker strip
+    ticker_strip({
         "S&P 500": "^GSPC", "NASDAQ": "^IXIC", "DOW 30": "^DJI",
         "Russell 2K": "^RUT", "VIX": "^VIX", "10Y Yield": "^TNX",
-    }
-
-    items = []
-    for name, tkr in indices.items():
-        q = fetch_realtime_quote(tkr)
-        d_sgn = "+" if q["change_pct"] >= 0 else ""
-        items.append({
-            "label": name,
-            "value": f"{q['price']:,.2f}",
-            "delta": f"{d_sgn}{q['change_pct']:.2f}%",
-        })
-    metric_grid(items)
+    })
 
     # Main content grid
     col_chart, col_side = st.columns([2.5, 1])
@@ -831,8 +1004,8 @@ if page == "Overview":
         st.markdown("""
         <div class="card">
             <div class="card-header">
-                <span class="card-title">S&P 500</span>
-                <span class="status-badge badge-live" style="font-size:0.62rem;">6M</span>
+                <span class="card-title">S&amp;P 500 — 6 Month</span>
+                <span class="status-badge badge-info">Index</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -841,7 +1014,7 @@ if page == "Overview":
         if not sp500.empty:
             pct = (sp500["close"].iloc[-1] / sp500["close"].iloc[0] - 1) * 100
             c = C_GREEN if pct >= 0 else C_RED
-            fill_c = "rgba(16,185,129,0.06)" if pct >= 0 else "rgba(244,63,94,0.06)"
+            fill_c = "rgba(52,200,138,0.06)" if pct >= 0 else "rgba(228,87,61,0.06)"
 
             fig = go.Figure()
             fig.add_trace(go.Scatter(
@@ -857,8 +1030,8 @@ if page == "Overview":
         st.markdown("""
         <div class="card">
             <div class="card-header">
-                <span class="card-title">Top Signals</span>
-                <span class="status-badge badge-ai" style="font-size:0.62rem;">AI</span>
+                <span class="card-title">Top Alpha Signals</span>
+                <span class="status-badge badge-ai">AI</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -931,7 +1104,7 @@ if page == "Overview":
         try:
             sp500_data = fetch_stock_data("^GSPC", "1mo")
             nasdaq_data = fetch_stock_data("^IXIC", "1mo")
-            
+
             def calc_breadth(data, name):
                 if data.empty or len(data) < 2:
                     return {"Exchange": name, "Advancing": "N/A", "Declining": "N/A", "Unchanged": "N/A"}
@@ -942,7 +1115,7 @@ if page == "Overview":
                     "Declining": int((changes < 0).sum()),
                     "Unchanged": int((changes == 0).sum()),
                 }
-            
+
             breadth_data = [
                 calc_breadth(sp500_data, "S&P 500"),
                 calc_breadth(nasdaq_data, "NASDAQ"),
@@ -985,9 +1158,8 @@ elif page == "Analysis":
 
             st.plotly_chart(create_advanced_chart(df, ticker), width="stretch")
 
-            # Technical Summary
-            st.markdown('<div class="section-sep"></div>', unsafe_allow_html=True)
-            st.markdown('<div class="section-title">Technical Summary</div>', unsafe_allow_html=True)
+            section_sep()
+            section_title("Technical Summary")
 
             tc1, tc2, tc3, tc4 = st.columns(4)
             current = df["close"].iloc[-1]
@@ -999,35 +1171,35 @@ elif page == "Analysis":
                 if sma20 > 0:
                     sig_c = "var(--success)" if current > sma20 else "var(--danger)"
                     sig_t = "Above" if current > sma20 else "Below"
-                    st.markdown(f'<span style="color:{sig_c}; font-family:var(--font-mono); font-size:0.82rem;">SMA 20: {sig_t}</span>', unsafe_allow_html=True)
+                    st.markdown(f'<span style="color:{sig_c}; font-family:var(--font-mono); font-size:0.8rem;">SMA 20: {sig_t}</span>', unsafe_allow_html=True)
                 if sma50 > 0:
                     sig_c = "var(--success)" if current > sma50 else "var(--danger)"
                     sig_t = "Above" if current > sma50 else "Below"
-                    st.markdown(f'<span style="color:{sig_c}; font-family:var(--font-mono); font-size:0.82rem;">SMA 50: {sig_t}</span>', unsafe_allow_html=True)
+                    st.markdown(f'<span style="color:{sig_c}; font-family:var(--font-mono); font-size:0.8rem;">SMA 50: {sig_t}</span>', unsafe_allow_html=True)
             with tc2:
                 if "rsi" in df.columns:
                     rsi = df["rsi"].iloc[-1]
                     st.markdown("**RSI (14)**")
                     if rsi > 70:
-                        st.markdown(f'<span style="color:var(--danger); font-family:var(--font-mono); font-size:0.82rem;">Overbought ({rsi:.1f})</span>', unsafe_allow_html=True)
+                        st.markdown(f'<span style="color:var(--danger); font-family:var(--font-mono); font-size:0.8rem;">Overbought ({rsi:.1f})</span>', unsafe_allow_html=True)
                     elif rsi < 30:
-                        st.markdown(f'<span style="color:var(--success); font-family:var(--font-mono); font-size:0.82rem;">Oversold ({rsi:.1f})</span>', unsafe_allow_html=True)
+                        st.markdown(f'<span style="color:var(--success); font-family:var(--font-mono); font-size:0.8rem;">Oversold ({rsi:.1f})</span>', unsafe_allow_html=True)
                     else:
-                        st.markdown(f'<span style="color:var(--text-secondary); font-family:var(--font-mono); font-size:0.82rem;">Neutral ({rsi:.1f})</span>', unsafe_allow_html=True)
+                        st.markdown(f'<span style="color:var(--text-secondary); font-family:var(--font-mono); font-size:0.8rem;">Neutral ({rsi:.1f})</span>', unsafe_allow_html=True)
             with tc3:
                 if "macd" in df.columns:
                     st.markdown("**MACD**")
                     is_bull = df["macd"].iloc[-1] > df["macd_signal"].iloc[-1]
                     sig_c = "var(--success)" if is_bull else "var(--danger)"
                     sig_t = "Bullish" if is_bull else "Bearish"
-                    st.markdown(f'<span style="color:{sig_c}; font-family:var(--font-mono); font-size:0.82rem;">{sig_t}</span>', unsafe_allow_html=True)
+                    st.markdown(f'<span style="color:{sig_c}; font-family:var(--font-mono); font-size:0.8rem;">{sig_t}</span>', unsafe_allow_html=True)
             with tc4:
                 if "bb_upper" in df.columns:
                     bb_range = df["bb_upper"].iloc[-1] - df["bb_lower"].iloc[-1]
                     if bb_range > 0:
                         bb_pos = (current - df["bb_lower"].iloc[-1]) / bb_range * 100
                         st.markdown("**Bollinger %B**")
-                        st.markdown(f'<span style="font-family:var(--font-mono); font-size:0.82rem; color:var(--text-secondary);">{bb_pos:.1f}%</span>', unsafe_allow_html=True)
+                        st.markdown(f'<span style="font-family:var(--font-mono); font-size:0.8rem; color:var(--text-secondary);">{bb_pos:.1f}%</span>', unsafe_allow_html=True)
 
 
 # ============================================================================
@@ -1079,7 +1251,7 @@ elif page == "Portfolio":
     page_header("Portfolio", "Position tracking & risk attribution")
 
     PORTFOLIO_FILE = DATA_CACHE / "portfolio.json"
-    
+
     def load_portfolio():
         if PORTFOLIO_FILE.exists():
             with open(PORTFOLIO_FILE) as f:
@@ -1090,12 +1262,12 @@ elif page == "Portfolio":
             "NVDA": {"shares": 30, "cost": 450.00},
             "GOOGL": {"shares": 25, "cost": 140.00},
         }
-    
+
     def save_portfolio(portfolio):
         PORTFOLIO_FILE.parent.mkdir(exist_ok=True)
         with open(PORTFOLIO_FILE, 'w') as f:
             json.dump(portfolio, f, indent=2)
-    
+
     if "portfolio" not in st.session_state:
         st.session_state.portfolio = load_portfolio()
 
@@ -1132,14 +1304,14 @@ elif page == "Portfolio":
     ph1, ph2 = st.columns([2.2, 1])
 
     with ph1:
-        st.markdown('<div class="section-title">Holdings</div>', unsafe_allow_html=True)
+        section_title("Holdings")
         st.dataframe(pd.DataFrame(holdings), width="stretch", hide_index=True)
         if st.button("Save Portfolio", type="secondary"):
             save_portfolio(st.session_state.portfolio)
             st.success("Portfolio saved to disk")
 
     with ph2:
-        st.markdown('<div class="section-title">Allocation</div>', unsafe_allow_html=True)
+        section_title("Allocation")
 
         alloc = []
         for sym, data in st.session_state.portfolio.items():
@@ -1150,7 +1322,7 @@ elif page == "Portfolio":
 
         fig = go.Figure(data=[go.Pie(
             labels=alloc_df["Symbol"], values=alloc_df["Value"], hole=0.6,
-            marker=dict(colors=[C_INDIGO, C_SKY, C_GREEN, C_AMBER, C_RED]),
+            marker=dict(colors=[C_GOLD, C_SKY, C_GREEN, C_NAVY, C_RED]),
             textfont=dict(family="JetBrains Mono", size=11),
         )])
         fig.update_layout(**_base_layout(height=280,
@@ -1225,7 +1397,7 @@ elif page == "Agents":
         bus = EventBus()
 
         # ── Pipeline Status ──
-        st.markdown('<div class="section-title">Pipeline Status</div>', unsafe_allow_html=True)
+        section_title("Pipeline Status")
 
         pipeline_stages = [
             ("Data Ingest", "DataIngestionAgent", "01"),
@@ -1240,7 +1412,6 @@ elif page == "Agents":
             ("Lifecycle", "LifecycleAgent", "10"),
         ]
 
-        # Two rows of 5
         chips_html = '<div class="agent-grid">'
         for label, agent_name, num in pipeline_stages:
             agent = registry.get(agent_name)
@@ -1257,7 +1428,7 @@ elif page == "Agents":
 
             chips_html += f"""
             <div class="agent-chip {chip_cls}">
-                <div class="agent-chip-icon" style="font-family:var(--font-mono); font-size:0.65rem; color:var(--text-muted);">{num}</div>
+                <div class="agent-chip-icon">{num}</div>
                 <div class="agent-chip-name">{label}</div>
                 <div class="agent-chip-status" style="color:{col};">{status}</div>
             </div>"""
@@ -1276,7 +1447,7 @@ elif page == "Agents":
         ])
 
         # ── Run Pipeline ──
-        st.markdown('<div class="section-title">Run Pipeline</div>', unsafe_allow_html=True)
+        section_title("Run Pipeline")
 
         rp1, rp2, rp3 = st.columns(3)
         with rp1:
@@ -1303,7 +1474,7 @@ elif page == "Agents":
                                        for s in completed)
                             mark = "done" if done else "pending"
                             c = "var(--success)" if done else "var(--text-muted)"
-                            st.markdown(f'<span style="color:{c}; font-family:var(--font-mono); font-size:0.8rem;">[{mark}] {sn} {sl}</span>', unsafe_allow_html=True)
+                            st.markdown(f'<span style="color:{c}; font-family:var(--font-mono); font-size:0.78rem;">[{mark}] {sn} {sl}</span>', unsafe_allow_html=True)
 
                         data = d.get("data", {})
                         if data.get("signal"):
@@ -1318,10 +1489,10 @@ elif page == "Agents":
                             _res = data['resilience_score']
                             st.metric("Resilience", f"{float(_res):.1%}" if _res not in (None, '') else "—")
 
-        st.markdown('<div class="section-sep"></div>', unsafe_allow_html=True)
+        section_sep()
 
         # ── Agent Inspector ──
-        st.markdown('<div class="section-title">Agent Inspector</div>', unsafe_allow_html=True)
+        section_title("Agent Inspector")
 
         selected_agent = st.selectbox("Select Agent",
             [n for n in registry.agent_names], key="agent_detail")
@@ -1342,15 +1513,15 @@ elif page == "Agents":
                 if logs:
                     for entry in reversed(logs):
                         if "[ERROR]" in entry:
-                            st.markdown(f'<span style="color:var(--danger); font-family:var(--font-mono); font-size:0.78rem;">{entry}</span>', unsafe_allow_html=True)
+                            st.markdown(f'<span style="color:var(--danger); font-family:var(--font-mono); font-size:0.76rem;">{entry}</span>', unsafe_allow_html=True)
                         elif "[WARNING]" in entry:
-                            st.markdown(f'<span style="color:var(--warning); font-family:var(--font-mono); font-size:0.78rem;">{entry}</span>', unsafe_allow_html=True)
+                            st.markdown(f'<span style="color:var(--warning); font-family:var(--font-mono); font-size:0.76rem;">{entry}</span>', unsafe_allow_html=True)
                         else:
-                            st.markdown(f'<span style="color:var(--text-secondary); font-family:var(--font-mono); font-size:0.78rem;">{entry}</span>', unsafe_allow_html=True)
+                            st.markdown(f'<span style="color:var(--text-secondary); font-family:var(--font-mono); font-size:0.76rem;">{entry}</span>', unsafe_allow_html=True)
                 else:
                     st.caption("No logs yet — run the pipeline to generate activity.")
 
-        st.markdown('<div class="section-sep"></div>', unsafe_allow_html=True)
+        section_sep()
         st.markdown('<div class="section-subtitle">Event Bus</div>', unsafe_allow_html=True)
         st.json(bus.stats)
 
@@ -1362,28 +1533,15 @@ elif page == "Agents":
 elif page == "India":
     page_header("Indian Markets", "NSE / BSE real-time data & analysis",
                 [{"type": "live", "label": "NSE Live", "dot": True}])
-    
+
     # Indian market indices
-    in_indices = {
+    ticker_strip({
         "NIFTY 50": "^NSEI",
         "SENSEX": "^BSESN",
         "NIFTY Bank": "^NSEBANK",
         "NIFTY IT": "^CNXIT",
-    }
-    
-    items = []
-    for name, tkr in in_indices.items():
-        q = fetch_realtime_quote(tkr)
-        if q["price"] and q["price"] > 0:
-            d_sgn = "+" if q["change_pct"] >= 0 else ""
-            items.append({
-                "label": name,
-                "value": f"{q['price']:,.2f}",
-                "delta": f"{d_sgn}{q['change_pct']:.2f}%",
-            })
-    if items:
-        metric_grid(items)
-    
+    })
+
     # Indian stock search
     ic1, ic2, ic3 = st.columns([2, 1, 1])
     with ic1:
@@ -1392,18 +1550,18 @@ elif page == "India":
         in_period = st.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "2y"], index=3, key="in_period")
     with ic3:
         in_exchange = st.selectbox("Exchange", ["NSE (.NS)", "BSE (.BO)"], key="in_exchange")
-    
+
     # Auto-append suffix if not present
     if in_ticker and not in_ticker.endswith((".NS", ".BO")):
         suffix = ".NS" if "NSE" in in_exchange else ".BO"
         in_ticker = in_ticker + suffix
-    
+
     if in_ticker:
         in_df = fetch_stock_data(in_ticker, in_period)
         if not in_df.empty:
             in_df = calculate_indicators(in_df)
             in_q = fetch_realtime_quote(in_ticker)
-            
+
             d_sgn = "+" if in_q.get("change_pct", 0) >= 0 else ""
             metric_grid([
                 {"label": "Price", "value": f"\u20b9{in_q.get('price', 0):,.2f}", "delta": f"{d_sgn}{in_q.get('change_pct', 0):.2f}%"},
@@ -1413,15 +1571,14 @@ elif page == "India":
                 {"label": "Volume", "value": fmt(in_q.get("volume", 0), "")},
                 {"label": "Mkt Cap", "value": fmt(in_q.get("market_cap", 0))},
             ])
-            
+
             st.plotly_chart(create_advanced_chart(in_df, in_ticker), width="stretch")
         else:
             st.warning(f"No data found for {in_ticker}. Make sure the symbol is correct and ends with .NS (NSE) or .BO (BSE).")
-    
-    # Popular Indian stocks quick access
-    st.markdown('<div class="section-sep"></div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Popular Indian Stocks</div>', unsafe_allow_html=True)
-    
+
+    section_sep()
+    section_title("Popular Indian Stocks")
+
     popular = {
         "RELIANCE.NS": "Reliance Industries",
         "TCS.NS": "Tata Consultancy",
@@ -1434,7 +1591,7 @@ elif page == "India":
         "KOTAKBANK.NS": "Kotak Mahindra",
         "LT.NS": "Larsen & Toubro",
     }
-    
+
     pop_html = '<div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:0.5rem;">'
     for sym, name in popular.items():
         q = fetch_realtime_quote(sym)
@@ -1444,10 +1601,10 @@ elif page == "India":
         d_sgn = "+" if chg >= 0 else ""
         pop_html += f"""
         <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius); padding:0.7rem;">
-            <div style="font-family:var(--font-mono); font-weight:600; font-size:0.82rem; color:var(--text-primary);">{sym.replace('.NS','')}</div>
-            <div style="font-family:var(--font-body); font-size:0.68rem; color:var(--text-tertiary);">{name}</div>
-            <div style="font-family:var(--font-mono); font-size:0.78rem; color:var(--text-primary); margin-top:0.3rem;">\u20b9{price:,.2f}</div>
-            <div style="font-family:var(--font-mono); font-size:0.72rem; color:{c};">{d_sgn}{chg:.2f}%</div>
+            <div style="font-family:var(--font-mono); font-weight:600; font-size:0.8rem; color:var(--text-primary);">{sym.replace('.NS','')}</div>
+            <div style="font-family:var(--font-body); font-size:0.66rem; color:var(--text-tertiary);">{name}</div>
+            <div style="font-family:var(--font-mono); font-size:0.76rem; color:var(--text-primary); margin-top:0.3rem;">\u20b9{price:,.2f}</div>
+            <div style="font-family:var(--font-mono); font-size:0.7rem; color:{c};">{d_sgn}{chg:.2f}%</div>
         </div>"""
     pop_html += '</div>'
     st.markdown(pop_html, unsafe_allow_html=True)
@@ -1460,15 +1617,15 @@ elif page == "India":
 elif page == "Settings":
     page_header("Settings", "Configuration & system info")
 
-    st.markdown('<div class="section-title">Data Management</div>', unsafe_allow_html=True)
+    section_title("Data Management")
 
     if st.button("Clear Cache & Refresh"):
         st.cache_data.clear()
         st.success("Cache cleared — data will refresh on next load.")
 
-    st.markdown('<div class="section-sep"></div>', unsafe_allow_html=True)
+    section_sep()
 
-    st.markdown('<div class="section-title">System Information</div>', unsafe_allow_html=True)
+    section_title("System Information")
 
     data_files = list(DATA_CACHE.glob("*.parquet")) if DATA_CACHE.exists() else []
 
@@ -1476,7 +1633,7 @@ elif page == "Settings":
         ("Cache Location", str(DATA_CACHE)),
         ("Cached Files", str(len(data_files))),
         ("Framework", "Streamlit"),
-        ("Design System", "Midnight SaaS"),
+        ("Design System", "Private Banking"),
         ("Chart Engine", "Plotly"),
         ("Agent Engine", "Aegis Orchestrator"),
     ]
@@ -1486,8 +1643,8 @@ elif page == "Settings":
         rows_html += f"""
         <div style="display:flex; justify-content:space-between; padding:0.5rem 0;
                     border-bottom:1px solid var(--border-subtle);">
-            <span style="font-family:var(--font-body); font-size:0.82rem; color:var(--text-tertiary);">{label}</span>
-            <span style="font-family:var(--font-mono); font-size:0.82rem; color:var(--text-primary);">{value}</span>
+            <span style="font-family:var(--font-body); font-size:0.8rem; color:var(--text-tertiary);">{label}</span>
+            <span style="font-family:var(--font-mono); font-size:0.8rem; color:var(--text-primary);">{value}</span>
         </div>"""
 
     st.markdown(f"""

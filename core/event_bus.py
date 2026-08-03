@@ -14,7 +14,7 @@ import json
 import uuid
 import logging
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 from dataclasses import dataclass, field, asdict
 from enum import Enum
@@ -83,7 +83,7 @@ class Event:
             event_id=str(uuid.uuid4()),
             event_type=event_type,
             source_agent=source_agent,
-            timestamp=datetime.now(datetime.timezone.utc).isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             payload=tuple(sorted(payload.items())) if isinstance(payload, dict) else ()
         )
     

@@ -430,9 +430,13 @@ class FeatureRegistry:
                 name="adx",
                 category=FeatureCategory.TREND,
                 description="Average Directional Index",
-                compute_fn=lambda df: ta.trend.ADXIndicator(
-                    df['high'], df['low'], df['close']
-                ).adx(),
+                compute_fn=lambda df: (
+                    ta.trend.ADXIndicator(
+                        df['high'], df['low'], df['close'], window=14
+                    ).adx()
+                    if len(df) > 30
+                    else pd.Series(index=df.index, dtype=float)
+                ),
                 lookback=14
             ))
 
