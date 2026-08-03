@@ -2,6 +2,15 @@
 	 pip install -r requirements.txt
 	 docker-compose up -d
 
+cpp:
+	 bash cpp/build.sh
+	 javac -d java/build java/*.java
+
+java: cpp
+
+test:
+	 pytest tests/ -v
+
 dashboard:
 	 streamlit run dashboard/app_streamlit.py
 

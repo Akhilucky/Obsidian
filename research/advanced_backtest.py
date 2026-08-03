@@ -773,28 +773,41 @@ class MonteCarloSimulator:
         """
         n_days = len(returns)
         
-        # Generate simulated return paths
-        simulated_paths = []
-        final_values = []
-        max_drawdowns = []
-        
-        for _ in range(self.n_simulations):
-            # Bootstrap returns (random sampling with replacement)
-            sim_returns = np.random.choice(returns.values, size=n_days, replace=True)
+        try:
+            import core.fast_kernels as fk
+            finals, drawdowns = fk.monte_carlo(
+                returns.to_numpy(),
+                n_simulations=self.n_simulations,
+                initial_capital=initial_capital,
+            )
+            if len(finals) != self.n_simulations:
+                raise ValueError("kernel returned wrong size")
+        except Exception:
+            # Generate simulated return paths
+            simulated_paths = []
+            finals = []
+            drawdowns = []
             
-            # Calculate equity curve
-            equity = initial_capital * np.cumprod(1 + sim_returns)
-            simulated_paths.append(equity)
-            final_values.append(equity[-1])
+            for _ in range(self.n_simulations):
+                # Bootstrap returns (random sampling with replacement)
+                sim_returns = np.random.choice(returns.values, size=n_days, replace=True)
+                
+                # Calculate equity curve
+                equity = initial_capital * np.cumprod(1 + sim_returns)
+                simulated_paths.append(equity)
+                finals.append(equity[-1])
+                
+                # Calculate max drawdown
+                cummax = np.maximum.accumulate(equity)
+                drawdown = (equity - cummax) / cummax
+                drawdowns.append(np.min(drawdown))
             
-            # Calculate max drawdown
-            cummax = np.maximum.accumulate(equity)
-            drawdown = (equity - cummax) / cummax
-            max_drawdowns.append(np.min(drawdown))
+            finals = np.array(finals)
+            drawdowns = np.array(drawdowns)
         
         # Calculate statistics
-        final_values = np.array(final_values)
-        max_drawdowns = np.array(max_drawdowns)
+        final_values = np.asarray(finals)
+        max_drawdowns = np.asarray(drawdowns)
         
         return {
             'mean_final_value': np.mean(final_values),

@@ -18,6 +18,14 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Install native toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ openjdk-17-jdk-headless
+      - name: Build C++ and Java cores
+        run: |
+          bash cpp/build.sh
+          javac -d java/build java/PortfolioOptimizer.java
       - name: Compile check
         run: |
           python -m py_compile agents/*.py analytics/*.py core/*.py data/*.py \

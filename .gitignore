@@ -37,6 +37,11 @@ data_cache/
 *.parquet
 *.db
 
+# Native build artifacts
+cpp/libobsidian_core*.dylib
+cpp/libobsidian_core*.so
+java/build/
+
 # Logs
 *.log
 logs/

@@ -25,6 +25,12 @@ try:
 except ImportError:
     OPENBB_AVAILABLE = False
 
+try:
+    import core.java_optimizer as java_optimizer
+    JAVA_OPTIMIZER_AVAILABLE = java_optimizer.java_available()
+except ImportError:
+    JAVA_OPTIMIZER_AVAILABLE = False
+
 class RiskManager:
     def __init__(self, portfolio_manager):
         self.portfolio_manager = portfolio_manager
@@ -123,6 +129,21 @@ class RiskManager:
             problem = cp.Problem(objective, constraints)
             problem.solve()
             optimal_weights = weights.value
+        elif JAVA_OPTIMIZER_AVAILABLE:
+            # Pure-Java mean-variance optimization (closed form)
+            try:
+                java_result = java_optimizer.optimize_portfolio(
+                    tickers,
+                    np.asarray(expected_returns, dtype=float),
+                    np.asarray(cov_matrix, dtype=float),
+                )
+                weights_map = java_result["min_variance"]
+                optimal_weights = np.array(
+                    [weights_map[t] for t in tickers], dtype=float)
+            except Exception:
+                optimal_weights = None
+            if optimal_weights is None or not np.all(np.isfinite(optimal_weights)):
+                raise ImportError("Java optimizer failed for portfolio optimization")
         elif SCIPY_AVAILABLE:
             cov = cov_matrix.values
 

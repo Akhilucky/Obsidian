@@ -12,6 +12,12 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import logging
 
+try:
+    from core.fast_kernels import sma_crossover_signals, NATIVE_AVAILABLE
+    _NATIVE = NATIVE_AVAILABLE
+except ImportError:
+    _NATIVE = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -65,6 +71,17 @@ class BaseStrategy(ABC):
         """Get strategy parameters."""
         pass
     
+    def generate_signals(self, data: pd.DataFrame, symbol: str) -> List[TradeSignal]:
+        """
+        Generate a signal per bar (one bar at a time, in order).
+        Subclasses may override with batch/vectorized implementations.
+        """
+        signals = []
+        for i in range(len(data)):
+            window = data.iloc[:i+1]
+            signals.append(self.generate_signal(window, symbol))
+        return signals
+    
     def backtest(
         self,
         data: pd.DataFrame,
@@ -73,11 +90,7 @@ class BaseStrategy(ABC):
         position_size: float = 0.1
     ) -> Dict:
         """Run simple backtest on historical data."""
-        signals = []
-        for i in range(50, len(data)):
-            window = data.iloc[:i+1].copy()
-            signal = self.generate_signal(window, symbol)
-            signals.append(signal)
+        signals = self.generate_signals(data, symbol)
         
         # Calculate returns
         capital = initial_capital
@@ -136,6 +149,46 @@ class SMAStrategy(BaseStrategy):
         self.short_window = short_window
         self.long_window = long_window
         self.signal_threshold = signal_threshold
+
+    def generate_signals(self, data: pd.DataFrame, symbol: str) -> List[TradeSignal]:
+        """
+        Batch signal generation using the C++ single-pass kernel.
+        Falls back to the per-bar Python path if the kernel is unavailable.
+        """
+        try:
+            import core.fast_kernels as fk
+
+            prices = data['close'].to_numpy(dtype=np.float64)
+            raw_signals, confidences = fk.sma_crossover_signals(
+                prices,
+                short_window=self.short_window,
+                long_window=self.long_window,
+                signal_threshold=self.signal_threshold,
+            )
+
+            kernel_to_signal = {
+                0: Signal.HOLD,
+                1: Signal.BUY,
+                2: Signal.STRONG_BUY,
+                3: Signal.SELL,
+                4: Signal.STRONG_SELL,
+            }
+
+            signals = []
+            for i in range(len(data)):
+                raw = int(raw_signals[i])
+                signals.append(TradeSignal(
+                    symbol=symbol,
+                    signal=kernel_to_signal[raw],
+                    confidence=float(confidences[i]),
+                    price=float(prices[i]),
+                    timestamp=data.index[i],
+                    strategy=self.name,
+                    metadata={'fast_kernel': True},
+                ))
+            return signals
+        except Exception:
+            return super().generate_signals(data, symbol)
     
     def generate_signal(self, data: pd.DataFrame, symbol: str) -> TradeSignal:
         """Generate signal based on SMA crossover."""
