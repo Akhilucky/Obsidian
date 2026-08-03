@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { BarChart3, Bot, FlaskConical, Landmark, LayoutDashboard, Radar, Settings, Wallet } from "lucide-react"
+import { BarChart3, Bot, FlaskConical, Landmark, LayoutDashboard, Radar, Settings, TrendingUp, Wallet } from "lucide-react"
 
 const ITEMS = [
   { label: "Overview", path: "/overview", icon: LayoutDashboard, keywords: "home dashboard market" },
@@ -30,12 +30,25 @@ export default function CommandPalette({ open, onClose }: Props) {
   const results = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return ITEMS
-    return ITEMS.filter(
+    const matched = ITEMS.filter(
       (i) =>
         i.label.toLowerCase().includes(q) ||
         i.path.includes(q) ||
         i.keywords.includes(q)
     )
+    if (matched.length > 0) return matched
+    if (/^[a-z0-9.\^]{1,12}$/.test(q.trim())) {
+      const sym = q.trim().toUpperCase()
+      return [
+        {
+          label: `Open stock ${sym}`,
+          path: `/stock/${encodeURIComponent(sym)}`,
+          icon: TrendingUp,
+          keywords: "",
+        },
+      ]
+    }
+    return []
   }, [query])
 
   useEffect(() => {
@@ -113,7 +126,7 @@ onClick={close}
                     go(results[index].path)
                   }
                 }}
-                placeholder="Jump to a workspace…"
+                placeholder="Jump to a workspace or ticker…"
                 className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none"
               />
               <kbd className="rounded-md border px-1.5 py-0.5 font-mono text-[10px] text-[var(--text-muted)]"

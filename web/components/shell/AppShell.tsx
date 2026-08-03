@@ -27,7 +27,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const marginLeft = collapsed ? 80 : 264
 
   return (
-    <div className="min-h-screen">
+    <div className="grain min-h-screen">
       <Sidebar collapsed={collapsed} />
       <Topbar
         collapsed={collapsed}

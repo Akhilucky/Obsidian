@@ -1,12 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import Page from "@/components/shell/Page"
 import TickerStrip from "@/components/ui/TickerStrip"
 import MetricCard from "@/components/ui/MetricCard"
 import Card from "@/components/ui/Card"
 import PriceChart from "@/components/charts/PriceChart"
 import StatusDot from "@/components/ui/StatusDot"
+import PinButton from "@/components/ui/PinButton"
+import { useWatchlist } from "@/lib/watchlist-store"
 import { api, withTimeout } from "@/lib/api"
 import type { ChartPoint, IndexQuote, Quote } from "@/lib/types"
 import { fmtNum, fmtPct } from "@/lib/format"
@@ -15,8 +18,11 @@ export default function OverviewPage() {
   const [indices, setIndices] = useState<Record<string, IndexQuote> | null>(null)
   const [sp500, setSp500] = useState<ChartPoint[]>([])
   const [loading, setLoading] = useState(true)
+  const watchlist = useWatchlist((s) => s.symbols)
+  const loadWatchlist = useWatchlist((s) => s.load)
 
   useEffect(() => {
+    loadWatchlist()
     let alive = true
     const load = async () => {
       const [idx, chart] = await Promise.all([
@@ -34,7 +40,7 @@ export default function OverviewPage() {
       alive = false
       clearInterval(id)
     }
-  }, [])
+  }, [loadWatchlist])
 
   const last = sp500[sp500.length - 1]
   const first = sp500[0]
@@ -56,7 +62,7 @@ export default function OverviewPage() {
         <Card
           title="S&P 500 — 6 Month"
           badge={<span className="rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider text-[var(--text-muted)]" style={{ borderColor: "var(--border-strong)" }}>Index</span>}
-          className="xl:col-span-2 obs-card-hover"
+          className="hud-corners xl:col-span-2 obs-card-hover"
         >
           {loading ? (
             <div className="skeleton h-[340px] w-full" />
@@ -132,19 +138,32 @@ export default function OverviewPage() {
         <MetricCard label="Russell 2K" value={indices?.["Russell 2K"]?.price ?? 0} prefix="" delta={indices?.["Russell 2K"]?.change_pct} delay={0.15} />
       </div>
 
-      <Card title="Watchlist Positions" className="mt-5">
-        <table className="obs-table w-full">
-          <thead>
-            <tr>
-              <th>Symbol</th><th>Name</th><th>Price</th><th>Change</th><th>Volume</th><th>Mkt Cap</th>
-            </tr>
-          </thead>
-          <tbody>
-            {["AAPL", "MSFT", "NVDA", "AMZN", "META", "TSLA"].map((t) => (
-              <WatchRow key={t} ticker={t} />
-            ))}
-          </tbody>
-        </table>
+      <Card
+        title="Watchlist Positions"
+        badge={<span className="rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider text-[var(--text-muted)]" style={{ borderColor: "var(--border-strong)" }}>Pinned</span>}
+        className="mt-5"
+      >
+        {watchlist.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-10 text-center">
+            <div className="font-mono text-[13px] text-[var(--text-muted)]">No pinned stocks yet</div>
+            <div className="text-[12px] text-[var(--text-muted)]">
+              Pin tickers from any page to build your watchlist
+            </div>
+          </div>
+        ) : (
+          <table className="obs-table w-full">
+            <thead>
+              <tr>
+                <th>Symbol</th><th>Name</th><th>Price</th><th>Change</th><th>Volume</th><th>Mkt Cap</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {watchlist.map((t) => (
+                <WatchRow key={t} ticker={t} />
+              ))}
+            </tbody>
+          </table>
+        )}
       </Card>
     </Page>
   )
@@ -163,8 +182,12 @@ function WatchRow({ ticker }: { ticker: string }) {
   }, [ticker])
   const up = (quote?.change_pct ?? 0) >= 0
   return (
-    <tr>
-      <td className="font-mono font-semibold text-[var(--text-primary)]">{ticker}</td>
+    <tr className="group">
+      <td className="font-mono font-semibold text-[var(--text-primary)]">
+        <Link href={`/stock/${ticker}`} className="transition-colors hover:text-[var(--accent)]">
+          {ticker}
+        </Link>
+      </td>
       <td>{quote?.name ?? "—"}</td>
       <td className="font-mono">{quote ? quote.price.toFixed(2) : "—"}</td>
       <td className="font-mono" style={{ color: up ? "var(--up)" : "var(--down)" }}>
@@ -172,6 +195,9 @@ function WatchRow({ ticker }: { ticker: string }) {
       </td>
       <td className="font-mono">{quote ? fmtNum(quote.volume, "") : "—"}</td>
       <td className="font-mono">{quote ? fmtNum(quote.market_cap) : "—"}</td>
+      <td className="text-right opacity-0 transition-opacity group-hover:opacity-100">
+        <PinButton symbol={ticker} />
+      </td>
     </tr>
   )
 }

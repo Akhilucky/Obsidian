@@ -4,26 +4,27 @@ import { useEffect, useState } from "react"
 import Page from "@/components/shell/Page"
 import Card from "@/components/ui/Card"
 import AnimatedNumber from "@/components/ui/AnimatedNumber"
+import PinButton from "@/components/ui/PinButton"
 import { api, withTimeout } from "@/lib/api"
 import type { Quote } from "@/lib/types"
 import { fmtPct, signalLabel, signalTone } from "@/lib/format"
 
 const WATCHLIST = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "AMD", "JPM", "NFLX"]
 
-function scoreSignal(quote: Quote): number {
+function scoreSignal(quote: Quote, newsSentiment: number): number {
   const price = quote.price || 0
   const prev = quote.prev_close || 0
   const dayMove = prev > 0 ? (price - prev) / prev : 0
-  const rsiSignal = price > 0 ? 0.1 : 0
   let s = 0
   s += dayMove * 2.5
-  s += rsiSignal
+  s += newsSentiment * 0.5
   if (quote.sector === "Technology") s += 0.05
   return Math.max(-1, Math.min(1, s))
 }
 
 export default function SignalsPage() {
   const [quotes, setQuotes] = useState<Record<string, Quote>>({})
+  const [newsSentiment, setNewsSentiment] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -32,12 +33,20 @@ export default function SignalsPage() {
       const entries = await Promise.all(
         WATCHLIST.map(async (t) => [t, await withTimeout(api.quote(t), 15000)] as const)
       )
+      const news = await Promise.all(
+        WATCHLIST.map(async (t) => [t, await withTimeout(api.news(t, 5), 15000)] as const)
+      )
       if (!alive) return
       const map: Record<string, Quote> = {}
       for (const [t, q] of entries) {
         if (q && q.price > 0) map[t] = q
       }
+      const sent: Record<string, number> = {}
+      for (const [t, n] of news) {
+        if (n && n.items.length) sent[t] = n.net_sentiment
+      }
       setQuotes(map)
+      setNewsSentiment(sent)
       setLoading(false)
     }
     load()
@@ -47,7 +56,12 @@ export default function SignalsPage() {
   }, [])
 
   const rows = Object.entries(quotes)
-    .map(([symbol, quote]) => ({ symbol, quote, score: scoreSignal(quote) }))
+    .map(([symbol, quote]) => ({
+      symbol,
+      quote,
+      news: newsSentiment[symbol] ?? 0,
+      score: scoreSignal(quote, newsSentiment[symbol] ?? 0),
+    }))
     .sort((a, b) => b.score - a.score)
 
   const strongBuy = rows.filter((r) => r.score > 0.3).length
@@ -67,7 +81,14 @@ export default function SignalsPage() {
         <SummaryCard label="Strong Sell" value={strongSell} color="var(--down)" />
       </div>
 
-      <Card title="Alpha Score Matrix" actions={<span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">Sorted by conviction</span>}>
+      <Card
+        title="Alpha Score Matrix"
+        actions={
+          <span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)]">
+            Score blends price action + news sentiment
+          </span>
+        }
+      >
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -78,28 +99,54 @@ export default function SignalsPage() {
           <table className="obs-table w-full">
             <thead>
               <tr>
+                <th></th>
                 <th>Symbol</th>
                 <th>Name</th>
                 <th>Price</th>
                 <th>Day Move</th>
+                <th>News</th>
                 <th>Conviction</th>
                 <th>Score</th>
                 <th>Call</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ symbol, quote, score }) => {
+              {rows.map(({ symbol, quote, news, score }) => {
                 const tone = signalTone(score)
                 const label = signalLabel(score)
+                const newsTone = news > 0.1 ? "up" : news < -0.1 ? "down" : "neutral"
                 return (
                   <tr key={symbol}>
-                    <td className="font-mono font-semibold text-[var(--text-primary)]">{symbol}</td>
+                    <td className="w-8"><PinButton symbol={symbol} size={13} /></td>
+                    <td className="font-mono font-semibold text-[var(--text-primary)]">
+                      <a href={`/stock/${symbol}`} className="transition-colors hover:text-[var(--accent)]">
+                        {symbol}
+                      </a>
+                    </td>
                     <td>{quote.name}</td>
                     <td className="font-mono">{quote.price.toFixed(2)}</td>
                     <td className="font-mono" style={{ color: quote.change_pct >= 0 ? "var(--up)" : "var(--down)" }}>
                       {fmtPct(quote.change_pct)}
                     </td>
-                    <td className="w-48">
+                    <td>
+                      {news ? (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider"
+                          style={{
+                            borderColor:
+                              newsTone === "up" ? "rgba(52,200,138,0.35)" : newsTone === "down" ? "rgba(228,87,61,0.35)" : "var(--border-strong)",
+                            color: newsTone === "up" ? "var(--up)" : newsTone === "down" ? "var(--down)" : "var(--text-muted)",
+                            background:
+                              newsTone === "up" ? "rgba(52,200,138,0.08)" : newsTone === "down" ? "rgba(228,87,61,0.08)" : "transparent",
+                          }}
+                        >
+                          {newsTone === "up" ? "▲" : newsTone === "down" ? "▼" : "—"} {news.toFixed(2)}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-[var(--text-muted)]">—</span>
+                      )}
+                    </td>
+                    <td className="w-40">
                       <div className="flex items-center gap-2">
                         <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
                           <div
