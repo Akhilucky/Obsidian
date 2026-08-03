@@ -1,94 +1,135 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
+import Link from "next/link"
+import { motion } from "framer-motion"
+import { AlertTriangle, Plus, ShieldCheck, Trash2 } from "lucide-react"
 import Page from "@/components/shell/Page"
 import Card from "@/components/ui/Card"
 import AnimatedNumber from "@/components/ui/AnimatedNumber"
 import { api, withTimeout } from "@/lib/api"
+import type { PortfolioResult } from "@/lib/types"
 import { fmtPct } from "@/lib/format"
 
-type Holding = {
-  symbol: string
-  name: string
-  qty: number
-  avg_cost: number
-  last: number
-  weight: number
-}
-
-const BASE_HOLDINGS: Omit<Holding, "last">[] = [
-  { symbol: "AAPL", name: "Apple Inc.", qty: 120, avg_cost: 178.4, weight: 14.2 },
-  { symbol: "MSFT", name: "Microsoft", qty: 60, avg_cost: 338.2, weight: 13.8 },
-  { symbol: "NVDA", name: "NVIDIA", qty: 95, avg_cost: 89.4, weight: 15.6 },
-  { symbol: "GOOGL", name: "Alphabet", qty: 80, avg_cost: 142.1, weight: 9.4 },
-  { symbol: "AMZN", name: "Amazon", qty: 55, avg_cost: 158.9, weight: 8.7 },
-  { symbol: "META", name: "Meta Platforms", qty: 42, avg_cost: 312.6, weight: 7.9 },
-  { symbol: "TSLA", name: "Tesla", qty: 60, avg_cost: 244.3, weight: 6.2 },
-  { symbol: "JPM", name: "JPMorgan Chase", qty: 90, avg_cost: 158.7, weight: 5.8 },
-  { symbol: "V", name: "Visa", qty: 70, avg_cost: 241.5, weight: 5.1 },
-  { symbol: "AMD", name: "AMD", qty: 110, avg_cost: 128.9, weight: 4.3 },
-]
-
-const CASH = 125_400
-
 export default function PortfolioPage() {
-  const [holdings, setHoldings] = useState<Holding[]>([])
+  const [data, setData] = useState<PortfolioResult | null>(null)
   const [loading, setLoading] = useState(true)
+  const [symbol, setSymbol] = useState("")
+  const [qty, setQty] = useState("")
+  const [cost, setCost] = useState("")
+  const [adding, setAdding] = useState(false)
+
+  const load = useCallback(async () => {
+    const r = await withTimeout(api.portfolio(), 45000)
+    setData(r)
+    setLoading(false)
+  }, [])
 
   useEffect(() => {
     let alive = true
-    const load = async () => {
-      const withPrices = await Promise.all(
-        BASE_HOLDINGS.map(async (h) => {
-          const q = await withTimeout(api.quote(h.symbol), 15000)
-          return { ...h, last: q && q.price > 0 ? q.price : h.avg_cost }
-        })
-      )
+    const doLoad = async () => {
+      const r = await withTimeout(api.portfolio(), 45000)
       if (!alive) return
-      setHoldings(withPrices)
+      setData(r)
       setLoading(false)
     }
-    load()
+    doLoad()
     return () => {
       alive = false
     }
   }, [])
 
-  const invested = holdings.reduce((s, h) => s + h.qty * h.avg_cost, 0)
-  const marketValue = holdings.reduce((s, h) => s + h.qty * h.last, 0)
-  const total = marketValue + CASH
-  const dayPnl = holdings.reduce((s, h) => s + h.qty * (h.last - h.avg_cost), 0)
-  const dayPnlPct = invested > 0 ? (dayPnl / invested) * 100 : 0
+  const add = async () => {
+    if (!symbol || !qty) return
+    setAdding(true)
+    await api.portfolioAdd(symbol.trim().toUpperCase(), Number(qty), Number(cost) || 0)
+    setSymbol("")
+    setQty("")
+    setCost("")
+    setAdding(false)
+    await load()
+  }
+
+  const remove = async (sym: string) => {
+    await api.portfolioRemove(sym)
+    await load()
+  }
+
+  const d = data
 
   return (
     <Page
-      title="Portfolio"
-      subtitle="Institutional allocations & risk overview"
-      badges={[{ label: "Paper Trading", tone: "live" }]}
+      title="Portfolio Risk & Analytics"
+      subtitle="Aladdin-style position management, risk & stress testing"
+      badges={[{ label: "Paper Trading", tone: "live" }, { label: "VaR 95%" }]}
     >
       {/* Header metrics */}
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <BigMetric label="Total Value" value={total} prefix="$" color="var(--text-primary)" />
-        <BigMetric label="Invested" value={invested} prefix="$" color="var(--text-primary)" />
-        <BigMetric label="Cash" value={CASH} prefix="$" color="var(--text-primary)" />
-        <BigMetric label="Total P&L" value={dayPnl} prefix={dayPnl >= 0 ? "+$" : "-$"} color={dayPnl >= 0 ? "var(--up)" : "var(--down)"} sub={fmtPct(dayPnlPct)} />
+        <BigMetric label="Total Value" value={d?.total ?? 0} prefix="$" color="var(--text-primary)" />
+        <BigMetric label="Invested" value={d?.invested ?? 0} prefix="$" color="var(--text-primary)" />
+        <BigMetric label="Cash" value={d?.cash ?? 0} prefix="$" color="var(--text-primary)" />
+        <BigMetric label="Total P&L" value={Math.abs(d?.total_pnl ?? 0)} prefix={(d?.total_pnl ?? 0) >= 0 ? "+$" : "-$"} color={(d?.total_pnl ?? 0) >= 0 ? "var(--up)" : "var(--down)"} sub={fmtPct(d?.total_pnl_pct ?? 0)} />
       </div>
 
-      {/* Allocation */}
+      {/* Risk row */}
       <div className="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <Card title="Asset Allocation" className="lg:col-span-1">
-          {loading ? (
-            <div className="skeleton h-64 w-full" />
+        <Card title="Value at Risk (95%, 1-Day)" className="lg:col-span-1">
+          {loading && !d ? (
+            <div className="skeleton h-40 w-full" />
           ) : (
-            <AllocationPie holdings={holdings} cash={CASH} />
+            <div className="space-y-4 pt-1">
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="font-mono text-[28px] font-bold text-[var(--text-primary)]">
+                    ${(d?.var_95_historical ?? 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="mt-0.5 font-mono text-[11px] text-[var(--text-muted)]">
+                    {(d?.var_pct_historical ?? 0).toFixed(2)}% of portfolio
+                  </div>
+                </div>
+                <ShieldCheck size={22} style={{ color: "var(--up)" }} />
+              </div>
+              <div className="border-t pt-3 text-[11px]" style={{ borderColor: "var(--border)" }}>
+                <Row label="Parametric (σ)" value={`$${(d?.var_95_parametric ?? 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`} />
+                <Row label="Historical" value={`$${(d?.var_95_historical ?? 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`} />
+              </div>
+            </div>
           )}
         </Card>
+
+        <Card title="Stress Scenarios" className="lg:col-span-2">
+          {loading && !d ? (
+            <div className="skeleton h-40 w-full" />
+          ) : (
+            <div className="space-y-2.5 pt-1">
+              {(d?.scenarios ?? []).map((s, i) => (
+                <motion.div
+                  key={s.name}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="flex items-center justify-between rounded-lg border px-3 py-2"
+                  style={{ borderColor: "var(--border)" }}
+                >
+                  <span className="text-[12px] text-[var(--text-secondary)]">{s.name}</span>
+                  <span className="font-mono text-[12px]" style={{ color: "var(--down)" }}>
+                    {s.impact < 0 ? "-" : ""}${Math.abs(s.impact).toLocaleString("en-US", { maximumFractionDigits: 0 })} ({fmtPct(s.pct)})
+                  </span>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Allocation + compliance */}
+      <div className="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
         <Card title="Sector Exposure" className="lg:col-span-2">
-          {loading ? (
-            <div className="skeleton h-64 w-full" />
+          {loading && !d ? (
+            <div className="skeleton h-56 w-full" />
           ) : (
             <div className="space-y-4 pt-2">
-              {sectorExposure(holdings).map((s) => (
+              {(d?.sector_exposure ?? []).map((s) => (
                 <div key={s.name}>
                   <div className="mb-1.5 flex justify-between text-[12px]">
                     <span className="text-[var(--text-muted)]">{s.name}</span>
@@ -110,11 +151,65 @@ export default function PortfolioPage() {
             </div>
           )}
         </Card>
+
+        <Card
+          title="Compliance"
+          badge={
+            (d?.violations.length ?? 0) > 0 ? (
+              <span className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider" style={{ borderColor: "rgba(228,87,61,0.35)", color: "var(--down)" }}>
+                <AlertTriangle size={9} /> {d?.violations.length} breach{d?.violations.length === 1 ? "" : "es"}
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider" style={{ borderColor: "rgba(52,200,138,0.35)", color: "var(--up)" }}>
+                <ShieldCheck size={9} /> Within Limits
+              </span>
+            )
+          }
+        >
+          {(d?.violations.length ?? 0) > 0 ? (
+            <div className="space-y-2 pt-1">
+              {d?.violations.map((v, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between rounded-lg border px-3 py-2 text-[12px]"
+                  style={{ borderColor: v.severity === "high" ? "rgba(228,87,61,0.3)" : "rgba(217,164,65,0.3)", background: v.severity === "high" ? "rgba(228,87,61,0.06)" : "rgba(217,164,65,0.06)" }}
+                >
+                  <span className="text-[var(--text-secondary)]">{v.rule}</span>
+                  <span className="font-mono" style={{ color: v.severity === "high" ? "var(--down)" : "var(--amber)" }}>
+                    {v.limit}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 py-8 text-center">
+              <ShieldCheck size={26} style={{ color: "var(--up)" }} />
+              <div className="font-mono text-[12px] text-[var(--text-muted)]">All concentration limits respected</div>
+            </div>
+          )}
+        </Card>
       </div>
 
-      {/* Holdings table */}
-      <Card title="Holdings" actions={<span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">{holdings.length} positions</span>}>
-        {loading ? (
+      {/* Holdings editor */}
+      <Card
+        title="Holdings"
+        actions={<span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">{d?.position_count ?? 0} positions</span>}
+      >
+        <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
+          <Input label="Symbol" value={symbol} onChange={setSymbol} placeholder="AAPL" w="w-28" />
+          <Input label="Qty" value={qty} onChange={setQty} placeholder="100" w="w-20" />
+          <Input label="Avg Cost" value={cost} onChange={setCost} placeholder="180.00" w="w-24" />
+          <button
+            onClick={add}
+            disabled={adding || !symbol || !qty}
+            className="flex items-center gap-1.5 rounded-lg border px-4 py-2 text-[12px] font-medium transition-all duration-150 disabled:opacity-40"
+            style={{ borderColor: "var(--border-strong)", background: "rgba(56,189,248,0.08)", color: "var(--accent)" }}
+          >
+            <Plus size={13} /> {adding ? "Adding…" : "Add Position"}
+          </button>
+        </div>
+
+        {loading && !d ? (
           <div className="space-y-3">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="skeleton h-11 w-full" />
@@ -124,33 +219,44 @@ export default function PortfolioPage() {
           <table className="obs-table w-full">
             <thead>
               <tr>
-                <th>Symbol</th><th>Name</th><th>Qty</th><th>Avg Cost</th><th>Last</th><th>Value</th><th>P&L</th><th>Weight</th>
+                <th>Symbol</th><th>Qty</th><th>Avg Cost</th><th>Last</th><th>Value</th><th>P&L</th><th>Weight</th><th></th>
               </tr>
             </thead>
             <tbody>
-              {holdings.map((h) => {
-                const value = h.qty * h.last
-                const pnl = h.qty * (h.last - h.avg_cost)
-                const pnlPct = h.avg_cost > 0 ? ((h.last - h.avg_cost) / h.avg_cost) * 100 : 0
+              {(d?.holdings ?? []).map((h) => {
+                const pnl = h.pnl
                 const pos = pnl >= 0
+                const weight = d?.total ? (h.value / d.total) * 100 : 0
                 return (
-                  <tr key={h.symbol}>
-                    <td className="font-mono font-semibold text-[var(--text-primary)]">{h.symbol}</td>
-                    <td>{h.name}</td>
+                  <tr key={h.symbol} className="group">
+                    <td className="font-mono font-semibold text-[var(--text-primary)]">
+                      <Link href={`/stock/${h.symbol}`} className="transition-colors hover:text-[var(--accent)]">
+                        {h.symbol}
+                      </Link>
+                    </td>
                     <td className="font-mono">{h.qty}</td>
                     <td className="font-mono">${h.avg_cost.toFixed(2)}</td>
                     <td className="font-mono">${h.last.toFixed(2)}</td>
-                    <td className="font-mono text-[var(--text-primary)]">${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}</td>
+                    <td className="font-mono text-[var(--text-primary)]">${h.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}</td>
                     <td className="font-mono" style={{ color: pos ? "var(--up)" : "var(--down)" }}>
-                      {pos ? "+" : ""}${pnl.toLocaleString("en-US", { maximumFractionDigits: 0 })} ({fmtPct(pnlPct)})
+                      {pos ? "+" : ""}${pnl.toLocaleString("en-US", { maximumFractionDigits: 0 })} ({fmtPct(h.pnl_pct)})
                     </td>
                     <td>
                       <div className="flex items-center gap-2">
                         <div className="h-1.5 w-16 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
-                          <div className="h-full rounded-full" style={{ width: `${h.weight * 4}%`, background: "var(--accent)" }} />
+                          <div className="h-full rounded-full" style={{ width: `${Math.min(100, weight * 6)}%`, background: "var(--accent)" }} />
                         </div>
-                        <span className="font-mono text-[11px] text-[var(--text-muted)]">{h.weight.toFixed(1)}%</span>
+                        <span className="font-mono text-[11px] text-[var(--text-muted)]">{weight.toFixed(1)}%</span>
                       </div>
+                    </td>
+                    <td className="text-right">
+                      <button
+                        onClick={() => remove(h.symbol)}
+                        aria-label={`Remove ${h.symbol}`}
+                        className="rounded-lg p-1.5 text-[var(--text-muted)] opacity-0 transition-all hover:text-[var(--down)] group-hover:opacity-100"
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </td>
                   </tr>
                 )
@@ -163,13 +269,12 @@ export default function PortfolioPage() {
   )
 }
 
-function BigMetric({ label, value, prefix, color, sub }: { label: string; value: number; prefix: string; color: string; sub?: string }) {
-  return (
+function BigMetric({ label, value, prefix, color, sub }: { label: string; value: number; prefix: string; color: string; sub?: string }) {  return (
     <div className="obs-card obs-card-hover p-4">
       <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</div>
       <div className="mt-1.5 font-mono text-[26px] font-bold" style={{ color }}>
         <AnimatedNumber
-          value={Math.abs(value)}
+          value={value}
           duration={700}
           format={(v) => `${prefix}${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
         />
@@ -179,63 +284,26 @@ function BigMetric({ label, value, prefix, color, sub }: { label: string; value:
   )
 }
 
-function AllocationPie({ holdings, cash }: { holdings: Holding[]; cash: number }) {
-  const total = holdings.reduce((s, h) => s + h.qty * h.last, 0) + cash
-  const segments = [...holdings.map((h) => ({ name: h.symbol, value: (h.qty * h.last / total) * 100 })), { name: "CASH", value: (cash / total) * 100 }]
-  let acc = 0
-  const COLORS = ["#38bdf8", "#2f6fed", "#7dd3fc", "#818cf8", "#34c88a", "#d9a441", "#a78bfa", "#f472b6", "#22d3ee", "#4ade80", "#f87171"]
-  const circles = segments.map((s, i) => {
-    const c = (
-      <circle
-        key={i}
-        cx="50" cy="50" r="34" fill="none"
-        stroke={COLORS[i % COLORS.length]}
-        strokeWidth="12"
-        strokeDasharray={`${(s.value / 100) * 213.6} 213.6`}
-        strokeDashoffset={-acc * 2.136}
-        style={{ transition: "stroke-dasharray 900ms ease" }}
-      />
-    )
-    acc += s.value
-    return c
-  })
+function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col items-center pt-2">
-      <div className="relative h-40 w-40">
-        <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-          {circles}
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-mono text-[22px] font-bold text-[var(--text-primary)]">
-            {holdings.length}
-          </span>
-          <span className="text-[9px] uppercase tracking-widest text-[var(--text-muted)]">Positions</span>
-        </div>
-      </div>
-      <div className="mt-3 w-full space-y-1">
-        {segments.slice(0, 6).map((s, i) => (
-          <div key={s.name} className="flex items-center gap-2 text-[11px]">
-            <span className="h-2 w-2 rounded-sm" style={{ background: COLORS[i % COLORS.length] }} />
-            <span className="text-[var(--text-muted)]">{s.name}</span>
-            <span className="ml-auto font-mono text-[var(--text-primary)]">{s.value.toFixed(1)}%</span>
-          </div>
-        ))}
-      </div>
+    <div className="mb-1.5 flex justify-between">
+      <span className="text-[var(--text-muted)]">{label}</span>
+      <span className="font-mono text-[var(--text-primary)]">{value}</span>
     </div>
   )
 }
 
-function sectorExposure(holdings: Holding[]): { name: string; pct: number }[] {
-  const tech = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "AMD"]
-  const auto = ["TSLA"]
-  const fin = ["JPM", "V"]
-  const map: Record<string, string[]> = { Technology: tech, "Auto & Mobility": auto, Financials: fin }
-  const total = holdings.reduce((s, h) => s + h.qty * h.last, 0)
-  const out: { name: string; pct: number }[] = []
-  for (const [name, syms] of Object.entries(map)) {
-    const value = holdings.filter((h) => syms.includes(h.symbol)).reduce((s, h) => s + h.qty * h.last, 0)
-    out.push({ name, pct: total > 0 ? (value / total) * 100 : 0 })
-  }
-  out.sort((a, b) => b.pct - a.pct)
-  return out
+function Input({ label, value, onChange, placeholder, w }: { label: string; value: string; onChange: (v: string) => void; placeholder: string; w: string }) {
+  return (
+    <label className={`flex flex-col gap-1 ${w}`}>
+      <span className="text-[9px] uppercase tracking-widest text-[var(--text-muted)]">{label}</span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="rounded-lg border bg-transparent px-2.5 py-1.5 font-mono text-[12px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none"
+        style={{ borderColor: "var(--border)" }}
+      />
+    </label>
+  )
 }

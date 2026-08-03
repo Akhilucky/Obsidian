@@ -5,10 +5,11 @@ import Page from "@/components/shell/Page"
 import Card from "@/components/ui/Card"
 import PriceChart from "@/components/charts/PriceChart"
 import IndicatorChart from "@/components/charts/IndicatorChart"
+import CompareChart from "@/components/charts/CompareChart"
 import MetricCard from "@/components/ui/MetricCard"
 import AnimatedNumber from "@/components/ui/AnimatedNumber"
 import { api, withTimeout } from "@/lib/api"
-import type { ChartPoint, Quote } from "@/lib/types"
+import type { ChartPoint, CompareResult, Quote } from "@/lib/types"
 import { fmtNum, fmtPct } from "@/lib/format"
 
 const TICKERS = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "JPM", "V", "AMD"]
@@ -19,6 +20,8 @@ export default function AnalysisPage() {
   const [period, setPeriod] = useState("1y")
   const [quote, setQuote] = useState<Quote | null>(null)
   const [points, setPoints] = useState<ChartPoint[]>([])
+  const [compare, setCompare] = useState<CompareResult | null>(null)
+  const [compareSel, setCompareSel] = useState<string[]>(["AAPL", "MSFT", "NVDA", "SPY"])
   const [loading, setLoading] = useState(true)
 
   const selectTicker = (t: string) => {
@@ -34,23 +37,31 @@ export default function AnalysisPage() {
   useEffect(() => {
     let alive = true
     const load = async () => {
-      const [q, c] = await Promise.all([
+      const [q, c, cp] = await Promise.all([
         withTimeout(api.quote(ticker), 12000),
         withTimeout(api.chart(ticker, period), 12000),
+        withTimeout(api.compare(compareSel, "6mo"), 15000),
       ])
       if (!alive) return
       if (q) setQuote(q)
       if (c) setPoints(c.points)
+      if (cp) setCompare(cp)
       setLoading(false)
     }
     load()
     return () => {
       alive = false
     }
-  }, [ticker, period])
+  }, [ticker, period, compareSel])
 
   const last = points[points.length - 1]
   const up = (quote?.change_pct ?? 0) >= 0
+
+  const toggleCompare = (t: string) => {
+    setCompareSel((prev) =>
+      prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]
+    )
+  }
 
   return (
     <Page
@@ -133,6 +144,37 @@ export default function AnalysisPage() {
           <div className="skeleton h-[360px] w-full" />
         ) : (
           <PriceChart points={points} height={360} showSMA showBands showEMA={false} />
+        )}
+      </Card>
+
+      {/* Comparative return (COMP) */}
+      <Card
+        title="Comparative Total Return"
+        badge={<span className="rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider text-[var(--text-muted)]" style={{ borderColor: "var(--border-strong)" }}>Normalized = 100</span>}
+        className="mt-5"
+        actions={
+          <div className="flex flex-wrap gap-1">
+            {["AAPL", "MSFT", "NVDA", "GOOGL", "SPY", "TSLA"].map((t) => (
+              <button
+                key={t}
+                onClick={() => toggleCompare(t)}
+                className="rounded-md border px-2 py-0.5 font-mono text-[10px] transition-all duration-150"
+                style={{
+                  borderColor: compareSel.includes(t) ? "var(--accent)" : "var(--border)",
+                  color: compareSel.includes(t) ? "var(--accent)" : "var(--text-muted)",
+                  background: compareSel.includes(t) ? "rgba(56,189,248,0.08)" : "transparent",
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        }
+      >
+        {compare?.tickers?.length ? (
+          <CompareChart data={compare} height={300} />
+        ) : (
+          <div className="skeleton h-[300px] w-full" />
         )}
       </Card>
 

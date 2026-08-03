@@ -19,8 +19,12 @@ import { api, withTimeout } from "@/lib/api"
 import type {
   AnalystsResult,
   ChartPoint,
+  DividendsResult,
   EarningsResult,
+  FundamentalsResult,
   NewsResult,
+  OptionsResult,
+  PeersResult,
   Quote,
 } from "@/lib/types"
 import { fmtNum, fmtPct } from "@/lib/format"
@@ -34,17 +38,25 @@ export default function StockPage() {
   const [analysts, setAnalysts] = useState<AnalystsResult | null>(null)
   const [earnings, setEarnings] = useState<EarningsResult | null>(null)
   const [news, setNews] = useState<NewsResult | null>(null)
+  const [fundamentals, setFundamentals] = useState<FundamentalsResult | null>(null)
+  const [peers, setPeers] = useState<PeersResult | null>(null)
+  const [dividends, setDividends] = useState<DividendsResult | null>(null)
+  const [options, setOptions] = useState<OptionsResult | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let alive = true
     const load = async () => {
-      const [q, c, a, e, n] = await Promise.all([
+      const [q, c, a, e, n, f, p, dv, o] = await Promise.all([
         withTimeout(api.quote(ticker), 15000),
         withTimeout(api.chart(ticker, "6mo"), 15000),
         withTimeout(api.analysts(ticker), 15000),
         withTimeout(api.earnings(ticker), 15000),
         withTimeout(api.news(ticker, 15), 15000),
+        withTimeout(api.fundamentals(ticker), 20000),
+        withTimeout(api.peers(ticker), 20000),
+        withTimeout(api.dividends(ticker), 15000),
+        withTimeout(api.options(ticker), 20000),
       ])
       if (!alive) return
       setQuote(q)
@@ -52,10 +64,14 @@ export default function StockPage() {
       setAnalysts(a)
       setEarnings(e)
       setNews(n)
+      setFundamentals(f)
+      setPeers(p)
+      setDividends(dv)
+      setOptions(o)
       setLoading(false)
     }
     load()
-    const id = setInterval(load, 90000)
+    const id = setInterval(load, 120000)
     return () => {
       alive = false
       clearInterval(id)
@@ -265,6 +281,30 @@ export default function StockPage() {
           </TabsContent>
         </Tabs>
       </Card>
+
+      {/* Bloomberg-style intelligence tabs: FA / RV / DVD / OMON */}
+      <Card title="Bloomberg Intelligence" className="mt-5">
+        <Tabs defaultValue="fundamentals">
+          <TabsList className="mb-4 bg-[var(--bg-elevated)]">
+            <TabsTrigger value="fundamentals">FA · Fundamentals</TabsTrigger>
+            <TabsTrigger value="peers">RV · Peers</TabsTrigger>
+            <TabsTrigger value="dividends">DVD · Dividends</TabsTrigger>
+            <TabsTrigger value="options">OMON · Options</TabsTrigger>
+          </TabsList>
+          <TabsContent value="fundamentals">
+            <FundamentalsView data={fundamentals} loading={loading} />
+          </TabsContent>
+          <TabsContent value="peers">
+            <PeersView data={peers} loading={loading} />
+          </TabsContent>
+          <TabsContent value="dividends">
+            <DividendsView data={dividends} loading={loading} />
+          </TabsContent>
+          <TabsContent value="options">
+            <OptionsView data={options} loading={loading} />
+          </TabsContent>
+        </Tabs>
+      </Card>
     </Page>
   )
 }
@@ -357,4 +397,181 @@ function timeAgo(ts: number): string {
   if (diff < 3600) return `${Math.max(1, Math.floor(diff / 60))}m ago`
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
   return `${Math.floor(diff / 86400)}d ago`
+}
+
+function FundamentalsView({ data, loading }: { data: FundamentalsResult | null; loading: boolean }) {
+  if (loading && !data) return <div className="skeleton h-56 w-full" />
+  if (!data?.income?.length && !data?.snapshot) {
+    return <div className="py-6 text-center font-mono text-[12px] text-[var(--text-muted)]">Fundamentals unavailable</div>
+  }
+  const snap = data?.snapshot
+  return (
+    <div className="space-y-5">
+      {snap && (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {[
+            ["Beta", snap.beta ? snap.beta.toFixed(2) : "—"],
+            ["52W Range", snap.fifty_two_week_low && snap.fifty_two_week_high ? `${snap.fifty_two_week_low.toFixed(0)} – ${snap.fifty_two_week_high.toFixed(0)}` : "—"],
+            ["Target Price", snap.target_mean_price ? `$${snap.target_mean_price.toFixed(2)}` : "—"],
+            ["Fwd P/E", snap.forward_pe ? snap.forward_pe.toFixed(1) : "—"],
+            ["Div Yield", snap.dividend_yield ? `${snap.dividend_yield.toFixed(2)}%` : "—"],
+            ["Profit Margin", snap.profit_margin ? `${snap.profit_margin.toFixed(1)}%` : "—"],
+            ["ROE", snap.return_on_equity ? `${snap.return_on_equity.toFixed(1)}%` : "—"],
+            ["Shares Out", snap.shares_outstanding ? fmtNum(snap.shares_outstanding) : "—"],
+          ].map(([k, v]) => (
+            <div key={k} className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
+              <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">{k}</div>
+              <div className="mt-1 font-mono text-[15px] text-[var(--text-primary)]">{v}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <FundTable title="Income Statement" groups={data?.income ?? []} />
+      <FundTable title="Balance Sheet" groups={data?.balance ?? []} />
+      <FundTable title="Cash Flow" groups={data?.cashflow ?? []} />
+    </div>
+  )
+}
+
+function FundTable({ title, groups }: { title: string; groups: FundamentalsResult["income"] }) {
+  if (!groups.length) return null
+  const years = groups[0].values.map((v) => v.date.slice(0, 10))
+  return (
+    <div>
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{title}</div>
+      <table className="obs-table w-full">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            {years.map((y) => <th key={y}>{y}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {groups.map((g) => (
+            <tr key={g.metric}>
+              <td className="text-[var(--text-secondary)]">{g.metric}</td>
+              {g.values.map((v, i) => (
+                <td key={i} className="font-mono text-[var(--text-primary)]">
+                  {Math.abs(v.value) >= 1e9 ? fmtNum(v.value) : v.value.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function PeersView({ data, loading }: { data: PeersResult | null; loading: boolean }) {
+  if (loading && !data) return <div className="skeleton h-48 w-full" />
+  if (!data?.peers?.length) return <div className="py-6 text-center font-mono text-[12px] text-[var(--text-muted)]">No comparable peers found</div>
+  return (
+    <div>
+      <div className="mb-3 font-mono text-[11px] uppercase tracking-widest text-[var(--text-muted)]">
+        Sector: {data.sector} · Relative valuation
+      </div>
+      <table className="obs-table w-full">
+        <thead>
+          <tr>
+            <th>Symbol</th><th>Price</th><th>Change</th><th>P/E</th><th>Mkt Cap</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.peers.map((p) => (
+            <tr key={p.symbol} className="group">
+              <td className="font-mono font-semibold text-[var(--text-primary)]">
+                <Link href={`/stock/${p.symbol}`} className="transition-colors hover:text-[var(--accent)]">
+                  {p.symbol}
+                </Link>
+              </td>
+              <td className="font-mono">{p.price.toFixed(2)}</td>
+              <td className="font-mono" style={{ color: p.change_pct >= 0 ? "var(--up)" : "var(--down)" }}>
+                {fmtPct(p.change_pct)}
+              </td>
+              <td className="font-mono">{p.pe_ratio ? p.pe_ratio.toFixed(1) : "—"}</td>
+              <td className="font-mono">{p.market_cap ? fmtNum(p.market_cap) : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function DividendsView({ data, loading }: { data: DividendsResult | null; loading: boolean }) {
+  if (loading && !data) return <div className="skeleton h-48 w-full" />
+  if (!data?.history?.length) return <div className="py-6 text-center font-mono text-[12px] text-[var(--text-muted)]">No dividend history</div>
+  return (
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+      <div className="space-y-3">
+        <div className="rounded-xl border p-4" style={{ borderColor: "var(--border)" }}>
+          <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Annual Yield</div>
+          <div className="mt-1 font-mono text-[22px] font-bold text-[var(--text-primary)]">
+            {data.yield ? `${data.yield.toFixed(2)}%` : "—"}
+          </div>
+        </div>
+        <div className="rounded-xl border p-4" style={{ borderColor: "var(--border)" }}>
+          <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Payout Ratio</div>
+          <div className="mt-1 font-mono text-[22px] font-bold text-[var(--text-primary)]">
+            {data.payout_ratio ? `${data.payout_ratio.toFixed(1)}%` : "—"}
+          </div>
+        </div>
+      </div>
+      <table className="obs-table w-full md:col-span-2">
+        <thead>
+          <tr><th>Ex-Date</th><th>Dividend / Share</th></tr>
+        </thead>
+        <tbody>
+          {data.history.slice().reverse().map((h) => (
+            <tr key={h.date}>
+              <td className="font-mono text-[var(--text-primary)]">{h.date}</td>
+              <td className="font-mono">${h.amount.toFixed(4)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function OptionsView({ data, loading }: { data: OptionsResult | null; loading: boolean }) {
+  if (loading && !data) return <div className="skeleton h-48 w-full" />
+  const calls = data?.chain?.calls ?? []
+  const puts = data?.chain?.puts ?? []
+  if (!calls.length && !puts.length) {
+    return <div className="py-6 text-center font-mono text-[12px] text-[var(--text-muted)]">No options chain available</div>
+  }
+  return (
+    <div>
+      <div className="mb-3 font-mono text-[11px] uppercase tracking-widest text-[var(--text-muted)]">
+        Expiry {data?.expiry ?? "—"} {data?.underlying ? `· Spot $${data.underlying.toFixed(2)}` : ""}
+      </div>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {([["CALLS", calls], ["PUTS", puts]] as [string, OptionsResult["chain"]["calls"]][]).map(([label, rows]) => (
+          <div key={label}>
+            <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color: label === "CALLS" ? "var(--up)" : "var(--down)" }}>
+              {label}
+            </div>
+            <table className="obs-table w-full">
+              <thead>
+                <tr><th>Strike</th><th>Last</th><th>Bid/Ask</th><th>IV</th><th>OI</th></tr>
+              </thead>
+              <tbody>
+                {rows.map((o, i) => (
+                  <tr key={`${label}-${i}`}>
+                    <td className="font-mono text-[var(--text-primary)]">{o.strike.toFixed(0)}</td>
+                    <td className="font-mono">{o.last_price.toFixed(2)}</td>
+                    <td className="font-mono text-[11px]">{o.bid.toFixed(2)} / {o.ask.toFixed(2)}</td>
+                    <td className="font-mono">{(o.implied_vol * 100).toFixed(0)}%</td>
+                    <td className="font-mono">{o.open_interest ? Math.round(o.open_interest).toLocaleString() : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }

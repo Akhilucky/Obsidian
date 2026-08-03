@@ -9,29 +9,38 @@ import Card from "@/components/ui/Card"
 import PriceChart from "@/components/charts/PriceChart"
 import StatusDot from "@/components/ui/StatusDot"
 import PinButton from "@/components/ui/PinButton"
+import FocusSelector from "@/components/ui/FocusSelector"
 import { useWatchlist } from "@/lib/watchlist-store"
 import { api, withTimeout } from "@/lib/api"
-import type { ChartPoint, IndexQuote, Quote } from "@/lib/types"
+import type { ChartPoint, IndexQuote, MoversResult, Quote } from "@/lib/types"
 import { fmtNum, fmtPct } from "@/lib/format"
 
 export default function OverviewPage() {
   const [indices, setIndices] = useState<Record<string, IndexQuote> | null>(null)
+  const [focus, setFocus] = useState<string | null>(null)
+  const [focusQuote, setFocusQuote] = useState<Quote | null>(null)
   const [sp500, setSp500] = useState<ChartPoint[]>([])
+  const [movers, setMovers] = useState<MoversResult | null>(null)
   const [loading, setLoading] = useState(true)
   const watchlist = useWatchlist((s) => s.symbols)
   const loadWatchlist = useWatchlist((s) => s.load)
 
   useEffect(() => {
     loadWatchlist()
+    api.focus().then((f) => {
+      if (f && f.ticker) setFocus(f.ticker)
+    })
     let alive = true
     const load = async () => {
-      const [idx, chart] = await Promise.all([
+      const [idx, chart, mov] = await Promise.all([
         withTimeout(api.indices("us"), 12000),
         withTimeout(api.chart("^GSPC", "6mo"), 12000),
+        withTimeout(api.movers("us"), 20000),
       ])
       if (!alive) return
       setIndices(idx)
       setSp500(chart?.points ?? [])
+      setMovers(mov)
       setLoading(false)
     }
     load()
@@ -42,10 +51,34 @@ export default function OverviewPage() {
     }
   }, [loadWatchlist])
 
+  useEffect(() => {
+    if (!focus) return
+    let alive = true
+    const loadQuote = async () => {
+      const [q, c] = await Promise.all([
+        withTimeout(api.quote(focus), 15000),
+        withTimeout(api.chart(focus, "6mo"), 15000),
+      ])
+      if (!alive) return
+      setFocusQuote(q)
+      setSp500(c?.points ?? [])
+    }
+    loadQuote()
+    return () => {
+      alive = false
+    }
+  }, [focus])
+
+  const onFocusChange = (t: string) => {
+    setFocus(t)
+    api.setFocus(t)
+  }
+
   const last = sp500[sp500.length - 1]
   const first = sp500[0]
   const pct = last && first ? ((last.close - first.close) / first.close) * 100 : 0
   const up = pct >= 0
+  const fqUp = (focusQuote?.change_pct ?? 0) >= 0
 
   const vix = indices?.["VIX"]
   const tenY = indices?.["10Y Yield"]
@@ -60,8 +93,19 @@ export default function OverviewPage() {
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         <Card
-          title="S&P 500 — 6 Month"
-          badge={<span className="rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider text-[var(--text-muted)]" style={{ borderColor: "var(--border-strong)" }}>Index</span>}
+          title={focus ? `${focus} — 6 Month` : "S&P 500 — 6 Month"}
+          badge={
+            focus ? (
+              <span className="rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider text-[var(--text-muted)]" style={{ borderColor: "var(--border-strong)" }}>
+                Focus
+              </span>
+            ) : (
+              <span className="rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wider text-[var(--text-muted)]" style={{ borderColor: "var(--border-strong)" }}>
+                Index
+              </span>
+            )
+          }
+          actions={<FocusSelector ticker={focus ?? "^GSPC"} onChange={onFocusChange} />}
           className="hud-corners xl:col-span-2 obs-card-hover"
         >
           {loading ? (
@@ -77,8 +121,24 @@ export default function OverviewPage() {
                   {fmtPct(pct)}
                 </span>
                 <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)]">
-                  6M Performance
+                  {focus ? "Focus 6M Performance" : "6M Performance"}
                 </span>
+                {focus && focusQuote && (
+                  <>
+                    <span className="text-[var(--border-strong)]">|</span>
+                    <span className="font-mono text-[11px] text-[var(--text-muted)]">{focusQuote.name}</span>
+                    <span className="font-mono text-[13px]" style={{ color: fqUp ? "var(--up)" : "var(--down)" }}>
+                      {fmtPct(focusQuote.change_pct)}
+                    </span>
+                    <Link
+                      href={`/stock/${focus}`}
+                      className="ml-1 rounded-lg border px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-[var(--accent)] transition-all hover:border-[var(--accent)]"
+                      style={{ borderColor: "var(--border-strong)" }}
+                    >
+                      Full Profile →
+                    </Link>
+                  </>
+                )}
               </div>
             </>
           )}
@@ -111,28 +171,14 @@ export default function OverviewPage() {
             </div>
           </Card>
 
-          <Card title="Market Breadth">
-            <div className="space-y-3">
-              {["Advancers", "Decliners", "Unchanged"].map((label, i) => (
-                <div key={label} className="flex items-center justify-between text-[12px]">
-                  <span className="text-[var(--text-muted)]">{label}</span>
-                  <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-24 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
-                      <MotionBar color={i === 0 ? "var(--up)" : i === 1 ? "var(--down)" : "var(--text-muted)"} width={i === 0 ? 58 : i === 1 ? 34 : 8} />
-                    </div>
-                    <span className="w-10 text-right font-mono text-[var(--text-primary)]">
-                      {i === 0 ? "58%" : i === 1 ? "34%" : "8%"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <Card title="Market Movers">
+            <MoversList movers={movers} loading={loading} />
           </Card>
         </div>
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <MetricCard label="S&P 500" value={last?.close ?? 0} prefix="" delta={pct} delay={0} />
+        <MetricCard label="S&P 500" value={indices?.["S&P 500"]?.price ?? 0} prefix="" delta={indices?.["S&P 500"]?.change_pct} delay={0} />
         <MetricCard label="NASDAQ" value={indices?.NASDAQ?.price ?? 0} prefix="" delta={indices?.NASDAQ?.change_pct} delay={0.05} />
         <MetricCard label="DOW 30" value={indices?.["DOW 30"]?.price ?? 0} prefix="" delta={indices?.["DOW 30"]?.change_pct} delay={0.1} />
         <MetricCard label="Russell 2K" value={indices?.["Russell 2K"]?.price ?? 0} prefix="" delta={indices?.["Russell 2K"]?.change_pct} delay={0.15} />
@@ -169,6 +215,28 @@ export default function OverviewPage() {
   )
 }
 
+function MoversList({ movers, loading }: { movers: MoversResult | null; loading: boolean }) {
+  if (loading && !movers) return <div className="skeleton h-40 w-full" />
+  const rows = movers?.gainers.slice(0, 5) ?? []
+  return (
+    <div className="space-y-2">
+      {rows.map((m) => (
+        <div key={m.symbol} className="flex items-center justify-between text-[12px]">
+          <Link href={`/stock/${m.symbol}`} className="flex items-center gap-2">
+            <span className="font-mono font-semibold text-[var(--text-primary)] transition-colors hover:text-[var(--accent)]">
+              {m.symbol}
+            </span>
+            <span className="truncate text-[var(--text-muted)]">{m.name}</span>
+          </Link>
+          <span className="font-mono" style={{ color: m.change_pct >= 0 ? "var(--up)" : "var(--down)" }}>
+            {fmtPct(m.change_pct)}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function WatchRow({ ticker }: { ticker: string }) {
   const [quote, setQuote] = useState<Quote | null>(null)
   useEffect(() => {
@@ -199,14 +267,5 @@ function WatchRow({ ticker }: { ticker: string }) {
         <PinButton symbol={ticker} />
       </td>
     </tr>
-  )
-}
-
-function MotionBar({ width, color }: { width: number; color: string }) {
-  return (
-    <div
-      className="h-full rounded-full"
-      style={{ width: `${width}%`, background: color, boxShadow: `0 0 8px ${color}55` }}
-    />
   )
 }

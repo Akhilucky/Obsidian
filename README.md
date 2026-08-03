@@ -31,11 +31,14 @@ Obsidian Terminal is a full-stack quantitative finance platform that ingests mar
 
 | Page | Features |
 |-----|----------|
-| **Overview** | Market indices ticker strip, S&P 500 animated chart, VIX & market breadth, watchlist quotes |
-| **Analysis** | Per-ticker deep dive — SMA/EMA/Bollinger overlays, RSI & MACD panels, ATR metrics |
+| **Overview** | Focus stock chart (pick any ticker, persisted), market indices strip, VIX & 10Y, market movers, watchlist quotes |
+| **Markets** | WEI-style global watch: US / Asia-Pacific / Europe / Commodities & FX (28 instruments), gainers/losers/most-active |
+| **Screener** | EQS-style stock screener: US/India, sector, min market cap, max P/E filters |
+| **Analysis** | Per-ticker deep dive — SMA/EMA/Bollinger overlays, RSI & MACD panels, ATR, comparative total return (COMP) |
 | **Signals** | Composite alpha scores, conviction bars, strategy bias gauge, alert feed |
-| **Portfolio** | Holdings with P&L, allocation donut, sector exposure, animated totals |
-| **India** | NIFTY 50 / SENSEX indices, NSE/BSE stock browser, popular Indian stocks grid |
+| **Portfolio** | Aladdin-style analytics — historical & parametric VaR, 5 stress scenarios, compliance violations, sector exposure, editable holdings |
+| **Stock Profile** | DES + FA/RV/DVD/OMON — fundamentals, peer comparison, dividend history, options chain |
+| **India** | NIFTY 50 / SENSEX indices, NSE/BSE stock browser, popular Indian stocks grid (batched quotes) |
 | **Research** | Strategy library with Sharpe/win-rate, factor exposures, market performance |
 | **Agents** | Pipeline architecture view, per-agent health inspector |
 | **Settings** | Cache management, system info, runtime status |
@@ -202,10 +205,16 @@ for symbol, result in results.items():
 ## Competitive Advantages
 
 ### vs Bloomberg Terminal ($24,000/year)
-- **Free & Open Source** — No subscription required
+- **Free & Open Source** — No subscription required; all data comes from free public sources (Yahoo Finance, etc.)
 - **Indian Markets** — NSE/BSE support included
 - **Customizable ML** — Modify models, add new features
 - **Python-Native** — Integrate with any library in the ecosystem
+- **Terminal Functionality** — DES (focus profile), FA/RV/DVD/OMON, WEI, MOV, EQS, COMP, ERN, plus Aladdin-style VaR, stress testing & compliance checks
+
+### vs Aladdin ($100k+/year)
+- **Transparent Risk Math** — Historical + parametric VaR, 5 stress scenarios, concentration limits — all implemented in readable Python, not a black box
+- **Editable Holdings** — Add/remove positions with average cost, live P&L, sector exposure
+- **Zero Cost** — Same risk analytics for the price of free
 
 ### vs Other Open Source Terminals
 - **Multi-Agent Architecture** — 10 specialized agents with event-driven communication

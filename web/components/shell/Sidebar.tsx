@@ -8,6 +8,8 @@ import {
   BarChart3,
   Bot,
   FlaskConical,
+  Filter,
+  Globe,
   LayoutDashboard,
   Landmark,
   Radar,
@@ -18,7 +20,9 @@ import {
 const NAV = [
   { section: "Markets", items: [
     { label: "Overview", path: "/overview", icon: LayoutDashboard },
+    { label: "Markets", path: "/markets", icon: Globe },
     { label: "Analysis", path: "/analysis", icon: BarChart3 },
+    { label: "Screener", path: "/screener", icon: Filter },
     { label: "Signals", path: "/signals", icon: Radar },
     { label: "India", path: "/india", icon: Landmark },
   ]},

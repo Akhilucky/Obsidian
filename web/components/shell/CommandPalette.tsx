@@ -3,14 +3,19 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
-import { BarChart3, Bot, FlaskConical, Landmark, LayoutDashboard, Radar, Settings, TrendingUp, Wallet } from "lucide-react"
+import {
+  BarChart3, Bot, FlaskConical, Filter, Globe, Landmark, LayoutDashboard,
+  Radar, Settings, TrendingUp, Wallet,
+} from "lucide-react"
 
 const ITEMS = [
-  { label: "Overview", path: "/overview", icon: LayoutDashboard, keywords: "home dashboard market" },
-  { label: "Analysis", path: "/analysis", icon: BarChart3, keywords: "chart ticker stock technical" },
-  { label: "Signals", path: "/signals", icon: Radar, keywords: "alerts buy sell alpha" },
+  { label: "Overview", path: "/overview", icon: LayoutDashboard, keywords: "home dashboard market WEI WATC" },
+  { label: "Markets", path: "/markets", icon: Globe, keywords: "world indices fx commodities gold oil WEI MOV" },
+  { label: "Analysis", path: "/analysis", icon: BarChart3, keywords: "chart ticker stock technical GP HP" },
+  { label: "Screener", path: "/screener", icon: Filter, keywords: "screen filter stocks EQS universe" },
+  { label: "Signals", path: "/signals", icon: Radar, keywords: "alerts buy sell alpha ANR" },
   { label: "India", path: "/india", icon: Landmark, keywords: "nse bse nifty sensex" },
-  { label: "Portfolio", path: "/portfolio", icon: Wallet, keywords: "holdings pnl assets" },
+  { label: "Portfolio", path: "/portfolio", icon: Wallet, keywords: "holdings pnl assets risk var aladdin" },
   { label: "Research", path: "/research", icon: FlaskConical, keywords: "backtest factor models" },
   { label: "Agents", path: "/agents", icon: Bot, keywords: "pipeline orchestrator ai" },
   { label: "Settings", path: "/settings", icon: Settings, keywords: "config cache system" },
